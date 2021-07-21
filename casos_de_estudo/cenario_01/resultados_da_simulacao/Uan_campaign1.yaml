@@ -1,0 +1,58 @@
+scenario:
+    
+# Shell Script Parameters configuration
+    nOfCurlines:
+        - 1 # number of Campaign Lines
+    SimTied:
+        - 0
+    nOfCurlinesTied: # if greater than nOfCurlines, means that campaignX is included
+        - 0
+    daytime: # number of days to simulate (only for cluster simulation) 
+        - 0
+    htime: # number of hours to simulate (only for cluster simulation) 
+        - 0
+    mtime: # number of minutes to simulate (only for cluster simulation)
+        - 1
+    ntasks: # number of simulation in one .sh (only for cluster simulation - default: 30) 
+        - 18
+    #obs: necessary to also change: 
+    # "" --"+curLinePlus+"="+self.doc['scenario'][curLinePlus][j]+" to 
+    # "" --"+curLinePlus+"="+self.doc['scenario'][curLinePlus][i]+" in line 181
+
+# ns-3 script configuration
+    ns3_path: /home/c/ns-3/ns-allinone-3.31/ns-3.31/ # Complete path of ns-3 simulator
+    ns3_script: uan-auv-ipv4-npad # Script with the main code (inside scratch folder without .cc)
+    cluster_path: /home/mfdsdoria/ns-allinone-3.31/ns-3.31/
+    filename: CampaignUan # Output filename
+    simLocation: local # Set location of simulation: local or cluster
+        
+# Simu parameters
+    campaignX: #campaignX: name of parameter to vary in the X-axis
+        - MaxRange
+    campaignLines: #campaignLines: name of parameter to vary in different lines (ONLY 1)
+        - AuvModel
+    jobs: 100 # Number of jobs to run
+    SimTime: 86400 # Simulation duration (seconds)
+    nSinks: # Number of Sinks
+        - 1
+    nNodes: # Number of Nodes
+        - 0 
+    nAuvs: # Number of AUVs
+        - 1
+    AuvModel:
+        - 1
+        - 2
+        - 3
+    MaxRange:
+        - 10
+        - 1000
+        - 2000
+        - 3000
+        - 4000
+        - 5000
+    PktSize: # Packet Size
+        - 29
+    NoiseModel: 
+        - UanNoiseModelDefault
+    PropModel:  # Propagation Model
+        - UanPropModelThorp

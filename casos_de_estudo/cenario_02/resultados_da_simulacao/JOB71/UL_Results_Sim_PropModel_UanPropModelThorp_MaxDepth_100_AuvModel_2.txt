@@ -1,0 +1,2 @@
+Flow_ID, Lost_Packets, Tx_Packets, Tx_Bytes, TxOffered(Mbps),  Rx_Packets, Rx_Bytes, T_put(Mbps), Mean_Delay_Rx_Packets, Mean_Jitter, Packet_Loss_Ratio, NavComsumption, ModemComsumption
+1, 619, 4532, 271920, 2.5186e-05, 3913, 234780, 2.17444e-05, 6.67152, 0.0551873, 0.136584, 166000, 1.50413e+06

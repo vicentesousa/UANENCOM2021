@@ -1,0 +1,4710 @@
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/doc/auv.h ns-allinone-3.31_auv/ns-3.31/src/auv/doc/auv.h
+--- ns-allinone-3.31/ns-3.31/src/auv/doc/auv.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/doc/auv.h	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,27 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#ifndef AUV_H
++#define AUV_H
++
++/**
++ * \defgroup auv Autonomous Underwater Vehicle
++ *
++ * This section documents the API of the ns-3 AUV module. For a generic functional description, please refer to the ns-3 manual.
++ */
++
++#endif /* AUV_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/doc/auv.rst ns-allinone-3.31_auv/ns-3.31/src/auv/doc/auv.rst
+--- ns-allinone-3.31/ns-3.31/src/auv/doc/auv.rst	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/doc/auv.rst	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,50 @@
++.. include:: replace.txt
++.. highlight:: cpp
++
++
++Autonomous Underwater Vehicle (AUV) mobility and energy module
++--------------------------------------------------------------
++
++An autonomous underwater vehicle (AUV) is a robot which travels underwater
++without requiring input from an operator.
++
++The NS-3 AUV module simulates the below AUVs:
++
++* SeaGlider
++* REMUS 100
++* Typhoon
++* MARTA
++
++Model Description
++*****************
++
++Design
++======
++
++
++Scope and Limitations
++=====================
++
++
++References
++==========
++
++
++Usage
++*****
++
++Helper
++======
++
++Examples
++========
++
++
++Tests
++=====
++
++
++Validation
++**********
++
++
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/examples/auv-types-comparison.cc ns-allinone-3.31_auv/ns-3.31/src/auv/examples/auv-types-comparison.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/examples/auv-types-comparison.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/examples/auv-types-comparison.cc	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,118 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#include "ns3/auv-typhoon-helper.h"
++#include "ns3/auv-remus-helper.h"
++#include "ns3/auv-glider-helper.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++#include "ns3/node.h"
++#include "ns3/energy-source.h"
++#include "ns3/basic-energy-source.h"
++#include "ns3/device-energy-model.h"
++#include "ns3/log.h"
++#include "ns3/command-line.h"
++#include <list>
++#include <iostream>
++
++using namespace ns3;
++
++
++NS_LOG_COMPONENT_DEFINE ("AuvTypesComparison");
++
++/**
++ * \brief Traces periodically the position of a mobile node.
++ * \param mob AUV mobility model.
++ * \param delta Trace period.
++ */
++static void
++TracePos (Ptr<const AuvWaypointMobilityModel> mob, Time delta)
++{
++  Vector curPos = mob->GetPosition ();
++
++  std::cout << "At " << Simulator::Now ().GetSeconds () << ": " <<
++      curPos.x << " " << curPos.y << " " << curPos.z << std::endl;
++
++  Simulator::Schedule (delta, &TracePos, mob, delta);
++}
++
++int
++main (int argc, char **argv)
++{
++  std::string auvType = "Typhoon";
++  Ptr<DeviceEnergyModel> energyModel = 0;
++  Time StopTime = Seconds (200);
++  Time delta = Seconds (0.1);
++
++  CommandLine cmd;
++  cmd.AddValue ("AuvType", "Type of AUV (Typhoon, Remus, [Sea]Glider) - default is Typhoon", auvType);
++  cmd.Parse (argc, argv);
++
++  // create node
++  Ptr<Node> node = CreateObject<Node> ();
++
++  // Select AUV type
++  if (auvType.compare ("Typhoon") == 0)
++    {
++      AuvTyphoonHelper re;
++      re.Install(node);
++      energyModel = node->GetObject<EnergySourceContainer> ()->Get (0)->FindDeviceEnergyModels ("ns3::TyphoonEnergyModel").Get (0);
++    }
++  else if (auvType.compare ("Remus") == 0)
++    {
++      AuvRemusHelper re;
++      re.Install(node);
++      energyModel = node->GetObject<EnergySourceContainer> ()->Get (0)->FindDeviceEnergyModels ("ns3::RemusEnergyModel").Get (0);
++    }
++  else if (auvType.compare ("SeaGlider") == 0 || auvType.compare ("Glider") == 0)
++    {
++      AuvGliderHelper re;
++      re.Install(node);
++      energyModel = node->GetObject<EnergySourceContainer> ()->Get (0)->FindDeviceEnergyModels ("ns3::GliderEnergyModel").Get (0);
++      StopTime = Seconds (2000); // Glider is much slower than the other two.
++      delta = Seconds (1);
++    }
++  else
++    {
++      NS_LOG_DEBUG ("Invalid AUV type");
++      exit (1);
++    }
++
++  Ptr<AuvWaypointMobilityModel> mm = node->GetObject <AuvWaypointMobilityModel> ();
++
++  mm->AddWaypoint (Waypoint (Seconds (0), Vector (0, 0, 0)));
++  mm->AddWaypoint (Waypoint (StopTime, Vector (15, 0, 40)));
++
++  // Trace the position
++  TracePos (mm, delta);
++
++  // Run the simulation
++  DoubleValue auvBatteryCapacity;
++  energyModel->GetAttribute ("BatteryCapacity", auvBatteryCapacity);
++
++  Simulator::Stop (StopTime + Seconds (1));
++  Simulator::Run ();
++  std::cout << "Total Energy Consumption " << energyModel->GetTotalEnergyConsumption ()<<std::endl;
++  std::cout << "Remained Energy " << auvBatteryCapacity.Get () - energyModel->GetTotalEnergyConsumption ()<<std::endl;
++  Simulator::Destroy ();
++
++
++  return 0;
++}
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/examples/wscript ns-allinone-3.31_auv/ns-3.31/src/auv/examples/wscript
+--- ns-allinone-3.31/ns-3.31/src/auv/examples/wscript	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/examples/wscript	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,8 @@
++# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
++
++def build(bld):
++    obj = bld.create_ns3_program('auv-types-comparison', ['auv'])
++    obj.source = 'auv-types-comparison.cc'
++
++
++
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-glider-helper.cc ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-glider-helper.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-glider-helper.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-glider-helper.cc	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,84 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#include "auv-glider-helper.h"
++#include "ns3/basic-energy-source-helper.h"
++#include "ns3/glider-energy-model.h"
++#include "ns3/glider-constraints.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++
++namespace ns3 {
++
++
++AuvGliderHelper::AuvGliderHelper ()
++{
++}
++
++void
++AuvGliderHelper::Install (NodeContainer c) const
++{
++  for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
++    {
++      Install (*i);
++    }
++}
++
++void
++AuvGliderHelper::Install (std::string nodeName) const
++{
++  Ptr<Node> node = Names::Find<Node> (nodeName);
++  Install (node);
++}
++
++void
++AuvGliderHelper::Install (Ptr<Node> node) const
++{
++
++  Ptr<AuvWaypointMobilityModel> wpmm = CreateObject<AuvWaypointMobilityModel> ();
++  Ptr<GliderConstraints> gliderConstraints = CreateObject<GliderConstraints> ();
++  wpmm->SetKinematicConstraints (gliderConstraints);
++
++  node->AggregateObject (wpmm);
++
++  // Glider energy source
++  BasicEnergySourceHelper eh;
++  eh.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (4320000.0));
++  eh.Install (node);
++
++  Ptr<GliderEnergyModel> typ = CreateObject<GliderEnergyModel> ();
++  Ptr<EnergySource> source = node->GetObject<EnergySourceContainer> ()->Get (0);
++  NS_ASSERT (source != NULL);
++  typ->SetEnergySource (source);
++  source->AppendDeviceEnergyModel (typ);
++  source->SetNode (node);
++  typ->SetNode (node);
++  typ->SetEnergyDepletionCallback (MakeCallback (&AuvWaypointMobilityModel::HandleEnergyDepletion, wpmm));
++  typ->SetEnergyRechargedCallback (MakeCallback (&AuvWaypointMobilityModel::HandleEnergyRecharged, wpmm));
++
++  Ptr<MobilityModel> mm = node->GetObject<MobilityModel> ();
++  NS_ASSERT_MSG (mm != NULL, "Perhaps an AUV should have a mobility model, isn't it ?");
++
++  wpmm->TraceConnectWithoutContext ("CourseChange", MakeCallback (&GliderEnergyModel::NotifyCourseChanged, typ));
++
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-glider-helper.h ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-glider-helper.h
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-glider-helper.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-glider-helper.h	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,71 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2010 Andrea Sacco
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Author: Andrea Sacco <andrea.sacco85@gmail.com>
++ */
++
++#ifndef AUV_GLIDER_HELPER_H
++#define AUV_GLIDER_HELPER_H
++
++#include "ns3/node.h"
++#include "ns3/node-container.h"
++#include "ns3/object-factory.h"
++#include "ns3/names.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++
++namespace ns3 {
++
++/**
++ * Install into a node (or set of nodes) the SeaGlider features:
++ * - SeaGlider energy model
++ * - SeaGlider energy source
++ *
++ * Moreover,"TraceConnectWithoutContext" calls "NotifyCourseChanged" (in glider-energy-model) every time
++ * a change in the speed vector occurs.
++ */
++class AuvGliderHelper
++{
++public:
++  AuvGliderHelper ();
++
++
++  /**
++   * Install the SeaGlider features into a set of nodes
++   *
++   * \param c NodeContainer where to install the features
++   */
++  void Install (NodeContainer c) const;
++
++  /**
++   * Install the SeaGlider features into a single node
++   *
++   * \param nodeName Name of the node where to install the features
++   */
++  void Install (std::string nodeName) const;
++
++  /**
++   * Install the SeaGlider features into a single node
++   *
++   * \param node Pointer of the node where to install the features
++   */
++  void Install (Ptr<Node> node) const;
++
++};
++
++} // namespace ns3
++
++#endif /* AUV_GLIDER_HELPER_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-mobility-helper.cc ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-mobility-helper.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-mobility-helper.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-mobility-helper.cc	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,112 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2010 Andrea Sacco
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Author: Andrea Sacco <andrea.sacco85@gmail.com>
++ */
++
++#include "auv-mobility-helper.h"
++#include "ns3/string.h"
++
++namespace ns3 {
++
++AuvMobilityHelper::AuvMobilityHelper ()
++{
++  m_factory.SetTypeId ("ns3::RemusMobilityModel");
++
++  m_allocator = CreateObjectWithAttributes<RandomBoxPositionAllocator>
++      ("X", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"),
++      "Y", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"),
++      "Z", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
++}
++
++void
++AuvMobilityHelper::SetType (std::string type)
++{
++  m_factory.SetTypeId (type);
++}
++
++void AuvMobilityHelper::SetAttribute (std::string name,
++                                      const AttributeValue &value)
++{
++  m_factory.Set (name,
++                 value);
++}
++
++void
++AuvMobilityHelper::SetPositionAllocator (Ptr<PositionAllocator> allocator)
++{
++  m_allocator = allocator;
++}
++
++void
++AuvMobilityHelper::SetPositionAllocator (std::string type,
++                                         std::string n1, const AttributeValue &v1,
++                                         std::string n2, const AttributeValue &v2,
++                                         std::string n3, const AttributeValue &v3,
++                                         std::string n4, const AttributeValue &v4,
++                                         std::string n5, const AttributeValue &v5,
++                                         std::string n6, const AttributeValue &v6,
++                                         std::string n7, const AttributeValue &v7,
++                                         std::string n8, const AttributeValue &v8,
++                                         std::string n9, const AttributeValue &v9)
++{
++  ObjectFactory pos;
++  pos.SetTypeId (type);
++  pos.Set (n1, v1);
++  pos.Set (n2, v2);
++  pos.Set (n3, v3);
++  pos.Set (n4, v4);
++  pos.Set (n5, v5);
++  pos.Set (n6, v6);
++  pos.Set (n7, v7);
++  pos.Set (n8, v8);
++  pos.Set (n9, v9);
++  m_allocator = pos.Create ()->GetObject<PositionAllocator> ();
++}
++
++void
++AuvMobilityHelper::Install (NodeContainer c) const
++{
++  for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
++    {
++      Install (*i);
++    }
++}
++
++void
++AuvMobilityHelper::Install (std::string nodeName) const
++{
++  Ptr<Node> node = Names::Find<Node> (nodeName);
++  Install (node);
++}
++
++void
++AuvMobilityHelper::Install (Ptr<Node> node) const
++{
++  Ptr<AuvMobilityModel> model = m_factory.Create ()->GetObject<AuvMobilityModel> ();
++
++  NS_ASSERT_MSG (model != NULL,
++                 "The requested mobility model is not an auv mobility model: \"" <<
++                 m_factory.GetTypeId ().GetName () << "\"");
++
++  Vector pos = m_allocator->GetNext ();
++  model->SetPosition (pos);
++  model->SetNode (node);
++  node->AggregateObject (model);
++}
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-mobility-helper.h ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-mobility-helper.h
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-mobility-helper.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-mobility-helper.h	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,139 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2010 Andrea Sacco
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Author: Andrea Sacco <andrea.sacco85@gmail.com>
++ */
++
++#ifndef AUV_MOBILITY_HELPER_H
++#define AUV_MOBILITY_HELPER_H
++
++
++#include "ns3/node-container.h"
++#include "ns3/object-factory.h"
++#include "ns3/position-allocator.h"
++#include "ns3/names.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++
++namespace ns3 {
++
++/**
++ * \ingroup auv
++ * \brief Install into a set of nodes an AuvMobilityModel
++ *
++ * Install into a set of nodes (or single node) the specified AuvMobilityModel.
++ * The specific AuvMobilityModel can be specified with the SetType method.
++ *
++ * The helper also uses a PositionAllocator to set the nodes positions.
++ *
++ * By default the mobility model is the RemusMobilityModel and the position
++ * allocator is a RandomBoxPositionAllocator with X, Y and Z variables set to
++ * constant zero.
++ */
++class AuvMobilityHelper
++{
++public:
++  /**
++   * Set the default mobility model (RemusMobilityModel) and the
++   * default position allocator (RandomBoxPositionAllocator with
++   * constant position in 0,0,0)
++   */
++  AuvMobilityHelper ();
++
++  /**
++   * \param type the AUV mobility model TypeId
++   */
++  void SetType (std::string type);
++
++  /**
++   * Set an attribute of the specified auv mobility model
++   *
++   * \param name name of the parameter
++   * \param value value of the parameter
++   */
++  void SetAttribute (std::string name, const AttributeValue &value);
++  /**
++   * Set the position allocator to be used during the install process
++   * to give each node an initial position
++   *
++   * \param allocator the position allocator to be set
++   */
++  void SetPositionAllocator (Ptr<PositionAllocator> allocator);
++  /**
++   * Set the position allocator to be used during the install process
++   * to give each node an initial position
++   *
++   * \param type the position allocator TypeId
++   * \param n1 the name of the attribute to set
++   * \param v1 the value of the attribute to set
++   * \param n2 the name of the attribute to set
++   * \param v2 the value of the attribute to set
++   * \param n3 the name of the attribute to set
++   * \param v3 the value of the attribute to set
++   * \param n4 the name of the attribute to set
++   * \param v4 the value of the attribute to set
++   * \param n5 the name of the attribute to set
++   * \param v5 the value of the attribute to set
++   * \param n6 the name of the attribute to set
++   * \param v6 the value of the attribute to set
++   * \param n7 the name of the attribute to set
++   * \param v7 the value of the attribute to set
++   * \param n8 the name of the attribute to set
++   * \param v8 the value of the attribute to set
++   * \param n9 the name of the attribute to set
++   * \param v9 the value of the attribute to set
++   */
++  void SetPositionAllocator (std::string type,
++                             std::string n1, const AttributeValue &v1,
++                             std::string n2, const AttributeValue &v2,
++                             std::string n3, const AttributeValue &v3,
++                             std::string n4, const AttributeValue &v4,
++                             std::string n5, const AttributeValue &v5,
++                             std::string n6, const AttributeValue &v6,
++                             std::string n7, const AttributeValue &v7,
++                             std::string n8, const AttributeValue &v8,
++                             std::string n9, const AttributeValue &v9);
++
++  /**
++   * For each of the input nodes a new mobility model of the specified type
++   * is created and attached to the node.
++   *
++   * \param c a set of nodes
++   */
++  void Install (NodeContainer c) const;
++
++  /**
++   * Install the specified auv mobility model into the node with the specified
++   * name.
++   *
++   * \param nodeName name of the node
++   */
++  void Install (std::string nodeName) const;
++
++  /**
++   * Install the specified auv mobility model into the specified node
++   *
++   * \param node Pointer of the node where to install the mobility model
++   */
++  void Install (Ptr<Node> node) const;
++
++  ObjectFactory m_factory;
++  Ptr<PositionAllocator> m_allocator;
++};
++
++} // namespace ns3
++
++#endif /* AUV_MOBILITY_HELPER_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-remus-helper.cc ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-remus-helper.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-remus-helper.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-remus-helper.cc	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,89 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++
++#include "auv-remus-helper.h"
++#include "ns3/basic-energy-source-helper.h"
++#include "ns3/remus-energy-model.h"
++#include "ns3/remus-constraints.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++#include "ns3/uan-channel.h"
++#include "ns3/uan-net-device.h"
++#include "ns3/uan-helper.h"
++#include "ns3/net-device-container.h"
++#include "ns3/net-device-container.h"
++
++namespace ns3 {
++
++
++AuvRemusHelper::AuvRemusHelper ()
++{
++}
++
++void
++AuvRemusHelper::Install (NodeContainer c) const
++{
++  for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
++    {
++      Install (*i);
++    }
++}
++
++void
++AuvRemusHelper::Install (std::string nodeName) const
++{
++  Ptr<Node> node = Names::Find<Node> (nodeName);
++  Install (node);
++}
++
++void
++AuvRemusHelper::Install (Ptr<Node> node) const
++{
++
++  Ptr<AuvWaypointMobilityModel> wpmm = CreateObject<AuvWaypointMobilityModel> ();
++  Ptr<RemusConstraints> remusConstraints = CreateObject<RemusConstraints> ();
++  wpmm->SetKinematicConstraints (remusConstraints);
++
++  node->AggregateObject (wpmm);
++
++
++  // Typhoon energy source
++  BasicEnergySourceHelper eh;
++  eh.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (3600000.0));
++  eh.Install (node);
++
++  Ptr<RemusEnergyModel> rem = CreateObject<RemusEnergyModel> ();
++  Ptr<EnergySource> source = node->GetObject<EnergySourceContainer> ()->Get (0);
++  NS_ASSERT (source != NULL);
++  rem->SetEnergySource (source);
++  source->AppendDeviceEnergyModel (rem);
++  source->SetNode (node);
++  rem->SetNode (node);
++  rem->SetEnergyDepletionCallback (MakeCallback (&AuvWaypointMobilityModel::HandleEnergyDepletion, wpmm));
++  rem->SetEnergyRechargedCallback (MakeCallback (&AuvWaypointMobilityModel::HandleEnergyRecharged, wpmm));
++
++  Ptr<MobilityModel> mm = node->GetObject<MobilityModel> ();
++  NS_ASSERT_MSG (mm != NULL, "Perhaps an AUV should have a mobility model, isn't it ?");
++
++  wpmm->TraceConnectWithoutContext ("CourseChange", MakeCallback (&RemusEnergyModel::NotifyCourseChanged, rem));
++
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-remus-helper.h ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-remus-helper.h
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-remus-helper.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-remus-helper.h	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,75 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2010 Andrea Sacco
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Author: Andrea Sacco <andrea.sacco85@gmail.com>
++ */
++
++#ifndef AUV_REMUS_HELPER_H
++#define AUV_REMUS_HELPER_H
++
++#include "ns3/node.h"
++#include "ns3/node-container.h"
++#include "ns3/object-factory.h"
++#include "ns3/names.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++
++namespace ns3 {
++
++/**
++ * Install into a node (or set of nodes) the REMUS features:
++ * - REMUS energy model
++ * - REMUS energy source
++ *
++ * Regarding the energy source, the REMUS features a re-chargeable lithium-ion battery pack rated 1 kWh [1]
++ *
++ * [1] https://www.km.kongsberg.com/ks/web/nokbg0397.nsf/AllWeb/82C0D4915CE64FEAC1257A23002BECC5/$file/REMUS-brochure.pdf?OpenElement
++ *
++ * Moreover,"TraceConnectWithoutContext" calls "NotifyCourseChanged" (in remus-energy-model) every time
++ * a change in the speed vector occurs.
++ */
++class AuvRemusHelper
++{
++public:
++  AuvRemusHelper ();
++
++
++  /**
++   * Install the REMUS features into a set of nodes
++   *
++   * \param c NodeContainer where to install the features
++   */
++  void Install (NodeContainer c) const;
++
++  /**
++   * Install the REMUS features into a single node
++   *
++   * \param nodeName Name of the node where to install the features
++   */
++  void Install (std::string nodeName) const;
++
++  /**
++   * Install the REMUS features into a single node
++   *
++   * \param node Pointer of the node where to install the features
++   */
++  void Install (Ptr<Node> node) const;
++
++};
++
++} // namespace ns3
++
++#endif /* AUV_REMUS_HELPER_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-remus-helperv2.cc ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-remus-helperv2.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-remus-helperv2.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-remus-helperv2.cc	2020-06-24 14:03:59.182805000 -0300
+@@ -0,0 +1,89 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++
++#include "auv-remus-helperv2.h"
++#include "ns3/basic-energy-source-helper.h"
++#include "ns3/remus-energy-model.h"
++#include "ns3/remus-constraintsv2.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++#include "ns3/uan-channel.h"
++#include "ns3/uan-net-device.h"
++#include "ns3/uan-helper.h"
++#include "ns3/net-device-container.h"
++#include "ns3/net-device-container.h"
++
++namespace ns3 {
++
++
++AuvRemusHelperv2::AuvRemusHelperv2 ()
++{
++}
++
++void
++AuvRemusHelperv2::Install (NodeContainer c) const
++{
++  for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
++    {
++      Install (*i);
++    }
++}
++
++void
++AuvRemusHelperv2::Install (std::string nodeName) const
++{
++  Ptr<Node> node = Names::Find<Node> (nodeName);
++  Install (node);
++}
++
++void
++AuvRemusHelperv2::Install (Ptr<Node> node) const
++{
++
++  Ptr<AuvWaypointMobilityModel> wpmm = CreateObject<AuvWaypointMobilityModel> ();
++  Ptr<RemusConstraintsv2> remusConstraintsv2 = CreateObject<RemusConstraintsv2> ();
++  wpmm->SetKinematicConstraints (remusConstraintsv2);
++
++  node->AggregateObject (wpmm);
++
++
++  // Remus energy source
++  BasicEnergySourceHelper eh;
++  eh.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (3600000.0));
++  eh.Install (node);
++
++  Ptr<RemusEnergyModel> rem = CreateObject<RemusEnergyModel> ();
++  Ptr<EnergySource> source = node->GetObject<EnergySourceContainer> ()->Get (0);
++  NS_ASSERT (source != NULL);
++  rem->SetEnergySource (source);
++  source->AppendDeviceEnergyModel (rem);
++  source->SetNode (node);
++  rem->SetNode (node);
++  rem->SetEnergyDepletionCallback (MakeCallback (&AuvWaypointMobilityModel::HandleEnergyDepletion, wpmm));
++  rem->SetEnergyRechargedCallback (MakeCallback (&AuvWaypointMobilityModel::HandleEnergyRecharged, wpmm));
++
++  Ptr<MobilityModel> mm = node->GetObject<MobilityModel> ();
++  NS_ASSERT_MSG (mm != NULL, "Perhaps an AUV should have a mobility model, isn't it ?");
++
++  wpmm->TraceConnectWithoutContext ("CourseChange", MakeCallback (&RemusEnergyModel::NotifyCourseChanged, rem));
++
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-remus-helperv2.h ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-remus-helperv2.h
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-remus-helperv2.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-remus-helperv2.h	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,79 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2010 Andrea Sacco
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Author: Andrea Sacco <andrea.sacco85@gmail.com>
++ */
++
++#ifndef AUV_REMUS_HELPERV2_H
++#define AUV_REMUS_HELPERV2_H
++
++#include "ns3/node.h"
++#include "ns3/node-container.h"
++#include "ns3/object-factory.h"
++#include "ns3/names.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++
++namespace ns3 {
++
++/**
++ * Install into a node (or set of nodes) the REMUS features:
++ * - REMUS energy model
++ * - REMUS energy source
++ *
++ * Regarding the energy source, the REMUS features a re-chargeable lithium-ion battery pack rated 1 kWh [1]
++ *
++ * [1] https://www.km.kongsberg.com/ks/web/nokbg0397.nsf/AllWeb/82C0D4915CE64FEAC1257A23002BECC5/$file/REMUS-brochure.pdf?OpenElement
++ *
++ * Moreover,"TraceConnectWithoutContext" calls "NotifyCourseChanged" (in remus-energy-model) every time
++ * a change in the speed vector occurs.
++ */
++class AuvRemusHelperv2
++{
++public:
++  AuvRemusHelperv2 ();
++
++
++  /**
++   * Install the REMUS features into a set of nodes
++   *
++   * \param c NodeContainer where to install the features
++   */
++  void Install (NodeContainer c) const;
++
++  /**
++   * Install the REMUS features into a single node
++   *
++   * \param nodeName Name of the node where to install the features
++   */
++  void Install (std::string nodeName) const;
++
++  /**
++   * Install the REMUS features into a single node
++   *
++   * \param node Pointer of the node where to install the features
++   */
++  void Install (Ptr<Node> node) const;
++
++
++
++};
++
++
++
++} // namespace ns3
++
++#endif /* AUV_REMUS_HELPERV2_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-typhoon-helper.cc ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-typhoon-helper.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-typhoon-helper.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-typhoon-helper.cc	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,90 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#include "auv-typhoon-helper.h"
++#include "ns3/basic-energy-source-helper.h"
++#include "ns3/typhoon-energy-model.h"
++#include "ns3/typhoon-constraints.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++#include "ns3/uan-channel.h"
++#include "ns3/uan-net-device.h"
++#include "ns3/uan-helper.h"
++#include "ns3/net-device-container.h"
++#include "ns3/net-device-container.h"
++
++namespace ns3 {
++
++
++AuvTyphoonHelper::AuvTyphoonHelper ()
++{
++}
++
++void
++AuvTyphoonHelper::Install (NodeContainer c) const
++{
++  for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
++    {
++      Install (*i);
++    }
++}
++
++void
++AuvTyphoonHelper::Install (std::string nodeName) const
++{
++  Ptr<Node> node = Names::Find<Node> (nodeName);
++  Install (node);
++}
++
++void
++AuvTyphoonHelper::Install (Ptr<Node> node) const
++{
++
++  Ptr<AuvWaypointMobilityModel> wpmm = CreateObject<AuvWaypointMobilityModel> ();
++  Ptr<TyphoonConstraints> typhoonConstraints = CreateObject<TyphoonConstraints> ();
++  wpmm->SetKinematicConstraints (typhoonConstraints);
++
++  node->AggregateObject (wpmm);
++
++
++  // Typhoon energy source
++  BasicEnergySourceHelper eh;
++  eh.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (4320000.0));
++  eh.Install (node);
++
++  Ptr<TyphoonEnergyModel> typ = CreateObject<TyphoonEnergyModel> ();
++  Ptr<EnergySource> source = node->GetObject<EnergySourceContainer> ()->Get (0);
++  NS_ASSERT (source != NULL);
++  typ->SetEnergySource (source);
++  source->AppendDeviceEnergyModel (typ);
++  source->SetNode (node);
++  typ->SetNode (node);
++  typ->SetEnergyDepletionCallback (MakeCallback (&AuvWaypointMobilityModel::HandleEnergyDepletion, wpmm));
++  typ->SetEnergyRechargedCallback (MakeCallback (&AuvWaypointMobilityModel::HandleEnergyRecharged, wpmm));
++
++  Ptr<MobilityModel> mm = node->GetObject<MobilityModel> ();
++  NS_ASSERT_MSG (mm != NULL, "Perhaps an AUV should have a mobility model, isn't it ?");
++
++  wpmm->TraceConnectWithoutContext ("CourseChange", MakeCallback (&TyphoonEnergyModel::NotifyCourseChanged, typ));
++
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/helper/auv-typhoon-helper.h ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-typhoon-helper.h
+--- ns-allinone-3.31/ns-3.31/src/auv/helper/auv-typhoon-helper.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/helper/auv-typhoon-helper.h	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,78 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#ifndef AUV_TYPHOON_HELPER_H
++#define AUV_TYPHOON_HELPER_H
++
++#include "ns3/node.h"
++#include "ns3/node-container.h"
++#include "ns3/object-factory.h"
++#include "ns3/names.h"
++#include "ns3/auv-waypoint-mobility-model.h"
++
++namespace ns3 {
++
++/**
++ * Install into a node (or set of nodes) the TYPHOON features:
++ * - Typhoon energy model
++ * - Typhoon energy source
++ *
++ * Typhoon uses 5 rechargeable batteries LiPo (1.2 kWh) in operating conditions.
++ *
++ * Moreover,"TraceConnectWithoutContext" calls "NotifyCourseChanged" (in typhoon-energy-model) every time
++ * a change in the speed vector occurs.
++ */
++class AuvTyphoonHelper
++{
++public:
++  AuvTyphoonHelper ();
++
++
++  /**
++   * Install the Typhoon features into a set of nodes
++   *
++   * \param c NodeContainer where to install the features
++   */
++  void Install (NodeContainer c) const;
++
++  /**
++   * Install the Typhoon features into a single node
++   *
++   * \param nodeName Name of the node where to install the features
++   */
++  void Install (std::string nodeName) const;
++
++  /**
++   * Install the Typhoon features into a single node
++   *
++   * \param node Pointer of the node where to install the features
++   */
++  void Install (Ptr<Node> node) const;
++
++
++
++};
++
++
++
++} // namespace ns3
++
++#endif /* AUV_TYPHOON_HELPER_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/auv-waypoint-mobility-model.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/auv-waypoint-mobility-model.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/auv-waypoint-mobility-model.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/auv-waypoint-mobility-model.cc	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,116 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#include "kinematic-constraints.h"
++#include "auv-waypoint-mobility-model.h"
++
++namespace ns3 {
++
++NS_LOG_COMPONENT_DEFINE ("AuvWaypointMobilityModel");
++
++NS_OBJECT_ENSURE_REGISTERED (AuvWaypointMobilityModel);
++
++
++TypeId
++AuvWaypointMobilityModel::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::AuvWaypointMobilityModel")
++    .SetParent<WaypointMobilityModel> ()
++    .SetGroupName ("Auv")
++    .AddConstructor<AuvWaypointMobilityModel> ()
++
++  ;
++  return tid;
++}
++
++
++AuvWaypointMobilityModel::AuvWaypointMobilityModel ()
++  : WaypointMobilityModel (),  m_first (true), m_energyDepleted (false)
++{
++}
++
++void
++AuvWaypointMobilityModel::DoDispose (void)
++{
++  m_kinematicConstraints = 0;
++  MobilityModel::DoDispose ();
++}
++
++void
++AuvWaypointMobilityModel::Update (void) const
++{
++  if ( m_energyDepleted )
++    {
++      return;
++    }
++  WaypointMobilityModel::Update ();
++}
++
++void
++AuvWaypointMobilityModel::AddWaypoint (const Waypoint &waypoint)
++{
++  if (m_first)
++    {
++      m_first = false;
++      WaypointMobilityModel::AddWaypoint (waypoint);
++      m_lastWaypointAdded = waypoint;
++      return;
++    }
++
++  NS_LOG_LOGIC ("Adding points between " << m_lastWaypointAdded << " and " << waypoint);
++  std::list<Waypoint> points = m_kinematicConstraints->CheckPath (m_lastWaypointAdded, waypoint);
++  std::list<Waypoint>::iterator iter;
++  for (iter = points.begin (); iter != points.end (); iter++)
++    {
++      NS_LOG_LOGIC ("Adding middle point " << *iter);
++      std::cout << "*** Adding point " << *iter << std::endl;
++      WaypointMobilityModel::AddWaypoint (*iter);
++    }
++  m_lastWaypointAdded = waypoint;
++}
++
++void
++AuvWaypointMobilityModel::HandleEnergyDepletion ()
++{
++  m_energyDepleted = true;
++  EndMobility ();
++  NotifyCourseChange ();
++}
++
++void
++AuvWaypointMobilityModel::HandleEnergyRecharged ()
++{
++  m_energyDepleted = false;
++}
++
++void
++AuvWaypointMobilityModel::SetKinematicConstraints (Ptr<KinematicConstraints> kinematicConstraints)
++{
++  m_kinematicConstraints = kinematicConstraints;
++}
++
++Ptr<KinematicConstraints> AuvWaypointMobilityModel::GetKinematicConstraints (void)
++{
++  return m_kinematicConstraints;
++}
++
++} // namespace ns3
++
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/auv-waypoint-mobility-model.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/auv-waypoint-mobility-model.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/auv-waypoint-mobility-model.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/auv-waypoint-mobility-model.h	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,75 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#ifndef AUV_WAYPOINT_MOBILITY_MODEL_H
++#define AUV_WAYPOINT_MOBILITY_MODEL_H
++
++#include "ns3/log.h"
++#include "ns3/abort.h"
++#include "ns3/simulator.h"
++#include "ns3/pointer.h"
++#include "ns3/waypoint-mobility-model.h"
++
++namespace ns3 {
++
++class KinematicConstraints;
++
++/**
++ * \ingroup auv
++ *
++ */
++
++
++class AuvWaypointMobilityModel : public WaypointMobilityModel
++{
++public:
++  typedef Callback<void> WaypointReachedCallback;
++
++  /**
++   * Register this type with the TypeId system.
++   * \return the object TypeId
++   */
++  static TypeId GetTypeId (void);
++
++  AuvWaypointMobilityModel ();
++
++  virtual void AddWaypoint (const Waypoint &waypoint);
++
++  void HandleEnergyDepletion ();
++  void HandleEnergyRecharged ();
++
++  void SetKinematicConstraints (Ptr<KinematicConstraints> kinematicConstraints);
++  Ptr<KinematicConstraints> GetKinematicConstraints (void);
++
++
++private:
++  virtual void Update (void) const;
++  virtual void DoDispose (void);
++  bool m_first;
++  bool m_energyDepleted;
++  Waypoint m_lastWaypointAdded;
++  Ptr<KinematicConstraints> m_kinematicConstraints;
++};
++
++} // namespace ns3
++
++#endif /* AUV_WAYPOINT_MOBILITY_MODEL_H */
++
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/glider-constraints.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/glider-constraints.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/glider-constraints.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/glider-constraints.cc	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,460 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++
++#include "glider-constraints.h"
++#include "ns3/log.h"
++#include "ns3/double.h"
++#include "ns3/nstime.h"
++#include "ns3/assert.h"
++#include "ns3/abort.h"
++
++
++namespace ns3 {
++
++NS_LOG_COMPONENT_DEFINE ("GliderConstraints");
++
++NS_OBJECT_ENSURE_REGISTERED (GliderConstraints);
++
++TypeId
++GliderConstraints::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::GliderConstraints")
++    .SetParent (KinematicConstraints::GetTypeId ())
++    .SetGroupName ("Auv")
++    .AddConstructor<GliderConstraints> ()
++    .AddAttribute ("MaxDepth", "The maximum operational depth, in m",
++                   DoubleValue (1000.0),
++                   MakeDoubleAccessor (&GliderConstraints::m_maxDepth),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxSpeed", "The maximum speed of the vehicle, in m/s.",
++                   DoubleValue (0.5),
++                   MakeDoubleAccessor (&GliderConstraints::m_maxSpeed),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxOmegaYaw", "The maximum omega (along z-axis) of the vehicle, in radians/s.",
++                   DoubleValue (0.3),
++                   MakeDoubleAccessor (&GliderConstraints::m_maxOmegaYaw),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxPitch", "The maximum pitch angle of the vehicle (absolute value = 60°) , in radians.",
++                   DoubleValue (1.045),
++                   MakeDoubleAccessor (&GliderConstraints::m_maxPitch),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MinPitch", "The maximum pitch angle of the vehicle (absolute value = 14°) , in radians.",
++                   DoubleValue (0.24),
++                   MakeDoubleAccessor (&GliderConstraints::m_minPitch),
++                   MakeDoubleChecker<double> ())
++
++    .AddAttribute ("MaxBuoyancy", "The maximum buoyancy supported by the glider buoyancy control system, in grammes",
++                   DoubleValue (200), // derived from the paper
++                   MakeDoubleAccessor (&GliderConstraints::m_maxBuoyancy),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("aBuoyancy", "First param for buoyancy calculus",
++                   DoubleValue (0.0022436), // derived from the paper
++                   MakeDoubleAccessor (&GliderConstraints::m_aBuoyancy),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("bBuoyancy", "Second param for buoyancy calculus",
++                   DoubleValue (0.01249), // derived from the paper
++                   MakeDoubleAccessor (&GliderConstraints::m_bBuoyancy),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("cBuoyancy", "Third param for buoyancy calculus",
++                   DoubleValue (9.8016e-6), // derived from the paper
++                   MakeDoubleAccessor (&GliderConstraints::m_cBuoyancy),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("rho", "Water density kg/m^3",
++                   DoubleValue (1023),
++                   MakeDoubleAccessor (&GliderConstraints::m_rho),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("l", "seaglider hull length, in m",
++                   DoubleValue (1.8),
++                   MakeDoubleAccessor (&GliderConstraints::m_l),
++                   MakeDoubleChecker<double> ())
++  ;
++  return tid;
++}
++
++/*/Initialize m_first (support variable) at true. We suppose that, during the first step,
++the robot is aligned with the next waypoint, therefore we don't want to have any rotation during the first run.
++/*/
++GliderConstraints::GliderConstraints ()
++  : m_first (0)
++{
++}
++
++GliderConstraints::~GliderConstraints ()
++{
++}
++
++
++double requiredYaw;
++Time intermediateStepTime = Seconds (0);
++
++double GliderConstraints::GetBuoyancy (double U, double W) const
++{
++  // here we get the bouyancy needed to maintain
++  // the given velocity at the given glide angle
++  double a = m_aBuoyancy;
++  double b = m_bBuoyancy;
++  double c = m_cBuoyancy;
++  // v^2=U^2+W^2
++  double v = std::sqrt (U * U + W * W);
++
++  // dynamic pressure
++  double q = 0.5 * m_rho * (v * v);
++
++  double tgteta = W / U;
++  double teta = std::atan (tgteta);
++
++  double lambda = (a * a) / (b * (1 / std::pow (q, 0.25)) * c);
++
++  double temp = (q * (m_l * m_l) * (a * a) * std::sin (teta)) /
++    (2 * c * (std::cos (teta) * std::cos (teta)));
++  // positive sqrt solution for Buoyancy
++  // double Bp = temp*(1 + std::sqrt(1 - 4/(lambda*(tgteta * tgteta))));
++  // negative sqrt solution for Buoyancy
++  double Bn = temp * (1 - std::sqrt (1 + 4 / (lambda * (tgteta * tgteta))));
++  std::cout << "Bn* 100 " << Bn * 100 << std::endl;
++  // the negative solution is returned, as the more efficient, as said into the article
++  // TODO discrepancies with paper values
++  // The value is in grammes [g]
++  return Bn * 100;
++}
++
++
++std::list<Waypoint>
++GliderConstraints::CheckPath (const Waypoint &start, const Waypoint &stop)
++{
++  std::list<Waypoint> ret;
++
++  //Check if the required depth is negative
++  NS_ABORT_MSG_IF (stop.position.z < 0, "** THE DEPTH HAS TO  NON-NEGATIVE");
++  //Check if the required depth is minor than the the maximum operational depth
++  NS_ABORT_MSG_IF (stop.position.z > m_maxDepth, "** REQUIRED DEPTH HAS TO BE < MAXIMUM OPERATIONAL DEPTH");
++/*/Check the required yaw angle. Since in the first run "m_first" is zero, any rotation occurs during the first run
++the robot is aligned with the next waypoint, therefore we don't want to have any rotation during the first run.
++/*/
++  requiredYaw = std::atan2 (stop.position.y - start.position.y, stop.position.x - start.position.x);
++  std::cout << "REQUIRED YAW " << requiredYaw << std::endl;
++  int case1 = 0;
++  int case2 = 0;
++  int case3 = 0;
++  if (m_first != 0 && m_Yaw != requiredYaw )
++    {
++      Waypoint rotationyaw = start;
++      /*/If I am in a singular point ( when "atan2" has an indeterminate form ) don't change anything.
++          In other words, the robot is maintained in the same attitude
++          /*/
++      if (stop.position.x == start.position.x && stop.position.y == start.position.y )
++        {
++          requiredYaw = m_Yaw;
++        }
++      else
++        {
++          rotationyaw.time = Seconds (std::abs ((std::abs (requiredYaw) - std::abs (m_Yaw))) / (m_maxOmegaYaw));
++          std::cout << "ROTATION YAW TIME " << rotationyaw.time << std::endl;
++          //Check rotation time for the yaw angle
++          NS_ABORT_MSG_IF (stop.time < rotationyaw.time, "** STOP TIME HAS TO BE > ROTATION YAW TIME");
++          ret.push_back (rotationyaw);
++          m_Yaw = requiredYaw;
++        }
++      intermediateStepTime = rotationyaw.time;
++    }
++
++/*/Four subcases arise:
++1 start point and stop point at the same depth
++2 start point and stop point in the same vertical line
++3 not case 1 or 2 and stop point is reachable through a straight line
++4 not case 1,2 or 3
++/*/
++
++//Case 1: Pitch set as the minimum
++
++  if (start.position.z == stop.position.z)
++
++    {
++      double module = std::sqrt ((stop.position.x - start.position.x) * (stop.position.x - start.position.x) + (stop.position.y - start.position.y) * (stop.position.y - start.position.y) + (stop.position.z - start.position.z) * (stop.position.z - start.position.z));
++      std::cout << "module " << module << std::endl;
++      Waypoint down;
++      down.position.x = start.position.x + 0.5 * module * cos (requiredYaw);
++      down.position.y = start.position.y + 0.5 * module * sin (requiredYaw);
++      down.position.z = start.position.z + 0.5 * module * tan (m_minPitch);
++      down.time = (start.time + (stop.time - (start.time + intermediateStepTime)) / 2);
++      ret.push_back (down);
++      std::cout << "DOWN1 " << down << std::endl;
++      const double duration = (stop.time - (start.time + intermediateStepTime)).ToDouble (ns3::Time::S);
++      double module2 = 2 * std::sqrt ((down.position.x - start.position.x) * (down.position.x - start.position.x) + (down.position.y - start.position.y) * (down.position.y - start.position.y) + (down.position.z - start.position.z) * (down.position.z - start.position.z));
++      std::cout << "module2 " << module2 << std::endl;
++      double required_speed = module2 / (duration);
++      std::cout << "required_speed " << required_speed << std::endl;
++      NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++      double buoyancy = GetBuoyancy (required_speed * cos (m_minPitch), required_speed * sin (m_minPitch));
++      std::cout << "required_speed*cos(m_minPitch) " << required_speed * cos (m_minPitch) << std::endl;
++      std::cout << "required_speed*sin(m_minPitch) " << required_speed * sin (m_minPitch) << std::endl;
++      std::cout << "buoyancy 1 " << buoyancy << std::endl;
++      NS_ABORT_MSG_IF (buoyancy > m_maxBuoyancy, "** REQUIRED BUOYANCY HAS TO BE < m_maxBuoyancy");
++      case1 = 1;
++      m_Yaw = requiredYaw;
++    }
++
++//Case 2: Pitch set as the maximum
++  if (start.position.x == stop.position.x && start.position.y == stop.position.y )
++    {
++      double module = std::sqrt ((stop.position.x - start.position.x) * (stop.position.x - start.position.x) + (stop.position.y - start.position.y) * (stop.position.y - start.position.y) + (stop.position.z - start.position.z) * (stop.position.z - start.position.z));
++
++      if (stop.position.z > start.position.z)
++        {
++          Waypoint down2;
++          down2.position.x = start.position.x + 0.5 * module * cos (requiredYaw) * 1 / (tan (m_maxPitch));
++          down2.position.y = start.position.y + 0.5 * module * sin (requiredYaw) * 1 / (tan (m_maxPitch));
++          down2.position.z = start.position.z + module * 0.5;
++          down2.time = (start.time + (stop.time - (start.time + intermediateStepTime)) / 2);
++          ret.push_back (down2);
++          Waypoint down3 = down2;
++          std::cout << "DOWN2 " << down2 << std::endl;
++          down3.time = down2.time + Seconds (3.14 / m_maxOmegaYaw);
++          ret.push_back (down3);
++          std::cout << "DOWN3 " << down3 << std::endl;
++          const double duration = (down2.time - (start.time + intermediateStepTime)).ToDouble (ns3::Time::S);
++          double module2 = std::sqrt ((down2.position.x - start.position.x) * (down2.position.x - start.position.x) + (down2.position.y - start.position.y) * (down2.position.y - start.position.y) + (down2.position.z - start.position.z) * (down2.position.z - start.position.z));
++          std::cout << "module2 " << module2 << std::endl;
++          double required_speed = module2 / (duration);
++          std::cout << "required_speed " << required_speed << std::endl;
++          std::cout << "required_speed*cos(m_maxPitch) " << required_speed * cos (m_maxPitch) << std::endl;
++          std::cout << "required_speed*sin(m_maxPitch) " << required_speed * sin (m_maxPitch) << std::endl;
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++          double buoyancy = GetBuoyancy (required_speed * cos (m_maxPitch), required_speed * sin (m_maxPitch));
++          const double duration2 = (stop.time - (down3.time)).ToDouble (ns3::Time::S);
++          NS_ABORT_MSG_IF (duration2 < 0, "** STOP TIME HAS TO BE > REQUIRED TIME");
++          std::cout << "module2 " << module2 << std::endl;
++          required_speed = module2 / (duration2);
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++          std::cout << "required_speed*cos(m_maxPitch) " << required_speed * cos (m_maxPitch) << std::endl;
++          std::cout << "required_speed*sin(m_maxPitch) " << required_speed * sin (m_maxPitch) << std::endl;
++          std::cout << "buoyancy 2 " << buoyancy << std::endl;
++          NS_ABORT_MSG_IF (buoyancy > m_maxBuoyancy, "** REQUIRED BUOYANCY HAS TO BE < m_maxBuoyancy");
++          m_Yaw = requiredYaw + 3.14;
++        }
++      else
++        {
++          Waypoint down2;
++          down2.position.x = start.position.x + 0.5 * module * cos (requiredYaw) * 1 / (tan (m_maxPitch));
++          down2.position.y = start.position.y + 0.5 * module * sin (requiredYaw) * 1 / (tan (m_maxPitch));
++          down2.position.z = start.position.z - module * 0.5;
++          down2.time = (start.time + (stop.time - (start.time + intermediateStepTime)) / 2);
++          ret.push_back (down2);
++          Waypoint down3 = down2;
++          std::cout << "DOWN2 " << down2 << std::endl;
++          down3.time = down2.time + Seconds (3.14 / m_maxOmegaYaw);
++          ret.push_back (down3);
++          std::cout << "DOWN3 " << down3 << std::endl;
++          const double duration = (down2.time - (start.time + intermediateStepTime)).ToDouble (ns3::Time::S);
++          double module2 = std::sqrt ((down2.position.x - start.position.x) * (down2.position.x - start.position.x) + (down2.position.y - start.position.y) * (down2.position.y - start.position.y) + (down2.position.z - start.position.z) * (down2.position.z - start.position.z));
++          std::cout << "module2 " << module2 << std::endl;
++          double required_speed = module2 / (duration);
++          std::cout << "required_speed " << required_speed << std::endl;
++          std::cout << "required_speed*cos(m_maxPitch) " << required_speed * cos (m_maxPitch) << std::endl;
++          std::cout << "required_speed*sin(m_maxPitch) " << required_speed * sin (m_maxPitch) << std::endl;
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++          double buoyancy = GetBuoyancy (required_speed * cos (m_maxPitch), required_speed * sin (m_maxPitch));
++          const double duration2 = (stop.time - (down3.time)).ToDouble (ns3::Time::S);
++          NS_ABORT_MSG_IF (duration2 < 0, "** STOP TIME HAS TO BE > REQUIRED TIME");
++          std::cout << "module2 " << module2 << std::endl;
++          required_speed = module2 / (duration2);
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++          std::cout << "required_speed*cos(m_maxPitch) " << required_speed * cos (m_maxPitch) << std::endl;
++          std::cout << "required_speed*sin(m_maxPitch) " << required_speed * sin (m_maxPitch) << std::endl;
++          std::cout << "buoyancy 2 " << buoyancy << std::endl;
++          NS_ABORT_MSG_IF (buoyancy > m_maxBuoyancy, "** REQUIRED BUOYANCY HAS TO BE < m_maxBuoyancy");
++          m_Yaw = requiredYaw + 3.14;
++        }
++      case2 = 1;
++    }
++
++//Case 3
++
++  double requiredPitch = std::atan2 (stop.position.z - start.position.z, stop.position.x - start.position.x);
++  std::cout << "REQUIRED PITCH " << requiredPitch << std::endl;
++  std::cout << "case1 " << case1 << std::endl;
++  std::cout << "case2 " << case2 << std::endl;
++//Check if the required pitch is acceptable given MaxPitch and MinPitch. If it is, the robot goes straight toward the stop point
++  if (case1 != 1 && case2 != 1)
++    {
++      std::cout << "QUIIIIII3 " << std::endl;
++      if (((requiredPitch > m_minPitch) && (requiredPitch < m_maxPitch)) || ((requiredPitch < -m_minPitch) && (requiredPitch > -m_maxPitch)) || ((requiredPitch < 3.14 - m_minPitch) && (requiredPitch > 3.14 -  m_maxPitch)) || ((requiredPitch > 3.14 + m_minPitch) && (requiredPitch < 3.14 + m_maxPitch)))
++        {
++          double module = std::sqrt ((stop.position.x - start.position.x) * (stop.position.x - start.position.x) + (stop.position.y - start.position.y) * (stop.position.y - start.position.y) + (stop.position.z - start.position.z) * (stop.position.z - start.position.z));
++          std::cout << "QUIIIIII3bis " << std::endl;
++          const double duration = (stop.time - (start.time + intermediateStepTime)).ToDouble (ns3::Time::S);
++          double required_speed = module / (duration);
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++          double buoyancy = GetBuoyancy (required_speed * cos (requiredPitch), required_speed * sin (requiredPitch));
++          std::cout << "buoyancy 3 " << buoyancy << std::endl;
++          NS_ABORT_MSG_IF (buoyancy > m_maxBuoyancy, "** REQUIRED BUOYANCY HAS TO BE < m_maxBuoyancy");
++          case3 = 1;
++        }
++    }
++
++//Case 4
++  if (case1 != 1 && case2 != 1 && case3 != 1 )
++    {
++
++      if (((requiredPitch > -m_minPitch) && (requiredPitch < m_minPitch)) || ((requiredPitch > m_maxPitch) && (requiredPitch < 3.14 - m_maxPitch)) || ((requiredPitch > 3.14 - m_minPitch) && (requiredPitch > 3.14 +  m_minPitch)) || ((requiredPitch > 3.14 + m_maxPitch) && (requiredPitch < 3.14 + 2 * m_maxPitch)))
++
++        {
++//module bis is the distance in the x-y plane between start point and stop point
++          double module_bis = std::sqrt ((stop.position.x - start.position.x) * (stop.position.x - start.position.x) + (stop.position.y - start.position.y) * (stop.position.y - start.position.y));
++
++          if (stop.position.z > start.position.z)
++            {
++              Vector3D temp;
++              temp.x = start.position.x;
++              temp.y = start.position.y;
++              temp.z = stop.position.z + module_bis * tan (3.14 / 2 - m_maxPitch);
++              double module = std::sqrt ((temp.x - start.position.x) * (temp.x - start.position.x) + (temp.y - start.position.y) * (temp.y - start.position.y) + (temp.z - start.position.z) * (temp.z - start.position.z));
++
++//distance between start point and down point
++              double distance = module * sin (m_maxPitch);
++//distance2 is the distance between down point and the z-axis
++              double distance2 = distance * cos (m_maxPitch);
++//Find the intermediate waypoint ("down")
++/*/
++The point is on the intersection between:
++- the line the starts from "start point" with slope m_maxPitch (dawnwards)
++- the line that passes on "stop point" and it is perpendicular respect to the previous one
++
++The "down time" is supposed to be in the middle between "start time" and "stop time" (if necessary the time to set the yaw angle is considered)
++/*/
++              Waypoint down;
++              down.position.x = start.position.x + distance2 * cos (requiredYaw);
++              down.position.y = start.position.y + distance2 * sin (requiredYaw);
++              down.position.z = start.position.z + distance * sin (m_maxPitch);
++              down.time = (start.time + (stop.time - (start.time + intermediateStepTime)) / 2);
++              ret.push_back (down);
++              std::cout << "DOWN " << down << std::endl;
++              Waypoint downyaw = down;
++//Rotate the robot on the x-y plane of 180° (yaw angle)
++              downyaw.time = down.time + Seconds (3.14 / m_maxOmegaYaw);
++              ret.push_back (downyaw);
++              std::cout << "DOWNYAW " << downyaw << std::endl;
++//Find the time to reach "down point"
++              const double duration = (down.time - (start.time + intermediateStepTime)).ToDouble (ns3::Time::S);
++// module2 is the distance between "down point" and "start point"
++              double module2 = std::sqrt ((down.position.x - start.position.x) * (down.position.x - start.position.x) + (down.position.y - start.position.y) * (down.position.y - start.position.y) + (down.position.z - start.position.z) * (down.position.z - start.position.z));
++              std::cout << "module2 " << module2 << std::endl;
++//Check the required speed
++              double required_speed = module2 / (duration);
++              std::cout << "required_speed " << required_speed << std::endl;
++              std::cout << "required_speed*cos(m_maxPitch) " << required_speed * cos (m_maxPitch) << std::endl;
++              std::cout << "required_speed*sin(m_maxPitch) " << required_speed * sin (m_maxPitch) << std::endl;
++              NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++              double buoyancy = GetBuoyancy (required_speed * cos (m_maxPitch), required_speed * sin (m_maxPitch));
++//Find the time to reach "stop point"
++              const double duration2 = (stop.time - (downyaw.time)).ToDouble (ns3::Time::S);
++              NS_ABORT_MSG_IF (duration2 < 0, "** STOP TIME HAS TO BE > REQUIRED TIME");
++// module3 here is the distance between down point and stop point
++              double module3 = std::sqrt ((down.position.x - stop.position.x) * (down.position.x - stop.position.x) + (down.position.y - stop.position.y) * (down.position.y - stop.position.y) + (down.position.z - stop.position.z) * (down.position.z - stop.position.z));
++              std::cout << "module3 " << module3 << std::endl;
++              double required_speed2 = module3 / (duration2);
++              NS_ABORT_MSG_IF (required_speed2 > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++              std::cout << "required_speed2 " << required_speed2 << std::endl;
++              std::cout << "buoyancy 2 " << buoyancy << std::endl;
++              NS_ABORT_MSG_IF (buoyancy > m_maxBuoyancy, "** REQUIRED BUOYANCY HAS TO BE < m_maxBuoyancy");
++              m_Yaw = requiredYaw + 3.14;
++            }
++          else
++            {
++              Vector3D temp;
++              temp.x = start.position.x;
++              temp.y = start.position.y;
++              temp.z = stop.position.z - module_bis * tan (3.14 / 2 - m_maxPitch);
++              double module = std::sqrt ((temp.x - start.position.x) * (temp.x - start.position.x) + (temp.y - start.position.y) * (temp.y - start.position.y) + (temp.z - start.position.z) * (temp.z - start.position.z));
++
++//distance between start point and down point
++              double distance = module * sin (m_maxPitch);
++//distance2 is the distance between down point and the z-axis
++              double distance2 = distance * cos (m_maxPitch);
++//Find the intermediate waypoint ("down")
++/*/
++The point is on the intersection between:
++- the line the starts from "start point" with slope m_maxPitch (upwards)
++- the line that passes on "stop point" and it is perpendicular respect to the previous one
++
++The "down time" is supposed to be in the middle between "start time" and "stop time" (if necessary the time to set the yaw angle is considered)
++/*/
++              Waypoint down;
++              down.position.x = start.position.x + distance2 * cos (requiredYaw);
++              down.position.y = start.position.y + distance2 * sin (requiredYaw);
++              down.position.z = start.position.z - distance * sin (m_maxPitch);
++              down.time = (start.time + (stop.time - (start.time + intermediateStepTime)) / 2);
++              ret.push_back (down);
++              std::cout << "DOWN " << down << std::endl;
++              Waypoint downyaw = down;
++//Rotate the robot on the x-y plane of 180° (yaw angle)
++              downyaw.time = down.time + Seconds (3.14 / m_maxOmegaYaw);
++              ret.push_back (downyaw);
++              std::cout << "DOWNYAW " << downyaw << std::endl;
++//Find the time to reach "down point"
++              const double duration = (down.time - (start.time + intermediateStepTime)).ToDouble (ns3::Time::S);
++// module2 is the distance between "down point" and "start point"
++              double module2 = std::sqrt ((down.position.x - start.position.x) * (down.position.x - start.position.x) + (down.position.y - start.position.y) * (down.position.y - start.position.y) + (down.position.z - start.position.z) * (down.position.z - start.position.z));
++              std::cout << "module2 " << module2 << std::endl;
++//Check the required speed
++              double required_speed = module2 / (duration);
++              std::cout << "required_speed " << required_speed << std::endl;
++              std::cout << "required_speed*cos(m_maxPitch) " << required_speed * cos (m_maxPitch) << std::endl;
++              std::cout << "required_speed*sin(m_maxPitch) " << required_speed * sin (m_maxPitch) << std::endl;
++              NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++              double buoyancy = GetBuoyancy (required_speed * cos (m_maxPitch), required_speed * sin (m_maxPitch));
++//Find the time to reach "stop point"
++              const double duration2 = (stop.time - (downyaw.time)).ToDouble (ns3::Time::S);
++              NS_ABORT_MSG_IF (duration2 < 0, "** STOP TIME HAS TO BE > REQUIRED TIME");
++// module2 here is the distance between down point and stop point
++              double module3 = std::sqrt ((down.position.x - stop.position.x) * (down.position.x - stop.position.x) + (down.position.y - stop.position.y) * (down.position.y - stop.position.y) + (down.position.z - stop.position.z) * (down.position.z - stop.position.z));
++              std::cout << "module3 " << module3 << std::endl;
++              double required_speed2 = module3 / (duration2);
++              NS_ABORT_MSG_IF (required_speed2 > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < m_maxSpeed");
++              std::cout << "required_speed*cos(m_maxPitch) " << required_speed * cos (m_maxPitch) << std::endl;
++              std::cout << "required_speed*sin(m_maxPitch) " << required_speed * sin (m_maxPitch) << std::endl;
++              std::cout << "buoyancy 2 " << buoyancy << std::endl;
++              NS_ABORT_MSG_IF (buoyancy > m_maxBuoyancy, "** REQUIRED BUOYANCY HAS TO BE < m_maxBuoyancy");
++              m_Yaw = requiredYaw + 3.14;
++            }
++        }
++
++
++    }
++
++  ret.push_back (stop);
++
++//  Variable "m_first" is set at true . Therefore, apart from the first run, the program has to check whether or not the robot is aligned with the next waypoint.
++
++  m_first = 1;
++  m_Yaw = requiredYaw;
++//Set case1, case2, case3  at zero value
++  case1 = 0;
++  case2 = 0;
++  case3 = 0;
++  return ret;
++
++
++}
++
++
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/glider-constraints.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/glider-constraints.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/glider-constraints.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/glider-constraints.h	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,85 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++
++#ifndef GLIDER_CONSTRAINTS_H_
++#define GLIDER_CONSTRAINTS_H_
++
++
++#include "kinematic-constraints.h"
++#include "ns3/event-id.h"
++#include "ns3/waypoint.h"
++
++
++namespace ns3 {
++
++/**
++ *
++ *
++ * A TYPHOON class AUV is an submarine-like device, propelled by some electric motors.
++ *
++ * The model is based on the characteristics of the TYPHOON AUV (DIEF University of Florence, MDM Lab) . The robot has 5 DOF.
++ *
++ * - maximum operating depth, 100 m
++ * - maximum speed (on a plane) 1.5 m/s
++ * - maximum speed (ascending or descending) 0.25 m/s
++ * - maximum rotational speed (along z-axis) 18°/s
++ * - the robot cannot move with a pitch angle different from zero.
++ *
++ * The function CheckPath gives a list of feasible intermediate waypoints between a start ("start") and an end point ("stop").
++ *
++ * Considering the cinematic constraints of the robot, given these two points, the situation goes as follow:
++ *
++ * - firstly (if necessary), the robot ascends or descends at the depth of the "stop" point;
++ * - then (if necessary), it rotates along the z-axis in order to align itself towards the "stop" point;
++ * - then (if necessary), it goes straight towards the "stop" point
++ */
++
++class GliderConstraints : public KinematicConstraints
++{
++public:
++  static TypeId GetTypeId (void);
++  GliderConstraints ();
++  ~GliderConstraints ();
++
++  virtual std::list<Waypoint> CheckPath (const Waypoint &start, const Waypoint &stop);
++  double GetBuoyancy (double U, double W) const;
++
++
++private:
++  double m_maxDepth;
++  double m_maxSpeed;
++  // double m_headDirection;
++  double m_maxOmegaYaw;
++  double m_maxPitch;
++  double m_minPitch;
++  double m_maxBuoyancy;
++  double m_aBuoyancy;
++  double m_bBuoyancy;
++  double m_cBuoyancy;
++  double m_rho;
++  double m_l;
++  int m_first;
++  double m_Yaw;
++
++};
++
++}  // namespace ns3
++
++#endif /* GLIDER_CONSTRAINTS_H_ */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/glider-energy-model.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/glider-energy-model.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/glider-energy-model.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/glider-energy-model.cc	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,277 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++#include "auv-waypoint-mobility-model.h"
++#include "glider-energy-model.h"
++#include "glider-constraints.h"
++
++
++NS_LOG_COMPONENT_DEFINE ("GliderEnergyModel");
++
++namespace ns3 {
++
++NS_OBJECT_ENSURE_REGISTERED (GliderEnergyModel);
++
++TypeId
++GliderEnergyModel::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::GliderEnergyModel")
++    .SetParent<DeviceEnergyModel> ()
++    .SetGroupName ("Auv")
++    .AddConstructor<GliderEnergyModel> ()
++    .AddAttribute ("BatteryCapacity", "The capacity of the battery, in J.",
++                   DoubleValue (4320000),
++                   MakeDoubleAccessor (&GliderEnergyModel::m_BatteryCapacity),
++                   MakeDoubleChecker<double> ())
++    .AddTraceSource ("TotalEnergyConsumption",
++                     "Total energy consumption of the radio device.",
++                     MakeTraceSourceAccessor (&GliderEnergyModel::m_totalEnergyConsumption),
++                     "ns3::TracedValueCallback::Double")
++  ;
++  return tid;
++
++
++}
++
++GliderEnergyModel::GliderEnergyModel ()
++{
++  NS_LOG_FUNCTION (this);
++  m_currentSpeed = 0.0;
++  m_lastUpdateTime = Seconds (0.0);
++  m_energyDepletionCallback.Nullify ();
++  m_energyRechargedCallback.Nullify ();
++  m_node = NULL;
++  m_source = NULL;
++  m_VelocityModule = 0;
++  m_totalEnergyConsumption = 0;
++  m_CountCycle = 0;
++
++}
++
++GliderEnergyModel::~GliderEnergyModel ()
++{
++  m_energyDepletionCallback.Nullify ();
++  m_energyRechargedCallback.Nullify ();
++  m_node = NULL;
++  m_source = NULL;
++
++}
++double Powerglider;
++double currentPowerglider;
++
++
++void
++GliderEnergyModel::NotifyCourseChanged (Ptr<const MobilityModel>model)
++{
++  Ptr<GliderConstraints> gc = CreateObject<GliderConstraints> ();
++  //Get the speed of the robot (3D Vector)
++  m_velocity = model->GetVelocity ();
++
++  //Get the module of the speed
++  m_VelocityModule = std::sqrt (m_velocity.x * m_velocity.x + m_velocity.y * m_velocity.y + m_velocity.z * m_velocity.z);
++  std::cout << "m_VelocityModule " << m_VelocityModule << std::endl;
++  // The power needed [W] is the product of buoyancy (in Newton) and the vertical speed.
++//Remember that GetBuoyancy returns a value in grammes
++  std::cout << "m_velocity.z " << m_velocity.z << std::endl;
++  std::cout << "gc->GetBuoyancy (m_velocity.x,m_velocity.z) " << gc->GetBuoyancy (m_velocity.x,m_velocity.z) << std::endl;
++  if (m_velocity.x != 0 && m_velocity.z != 0)
++    {
++      Powerglider =  0.01 * std::abs ((m_velocity.z) * gc->GetBuoyancy (m_velocity.x,m_velocity.z));
++
++      std::cout << "Powerglider " << Powerglider << std::endl;
++    }
++
++  //Initialize duration at zero seconds
++
++  Time duration = Seconds (0);
++
++  /*/Calculate the length of a time slot. A time slot is an interval of time where the speed vector is constant.
++   * Remember that the function NotifyCourseChanged is called every time that the speed vector changes.
++  /*/
++
++  if ( m_CountCycle != 0)
++    {
++      duration = Simulator::Now () - m_lastUpdateTime;
++    }
++
++  // Check if duration is valid
++
++  NS_ASSERT (duration.GetSeconds () >= 0);
++
++  //Get the supply voltage (V)
++
++  double supplyVoltage = m_source->GetSupplyVoltage ();
++
++  //Calculate the actual current (A)
++
++  m_actualCurrentDrain = currentPowerglider / supplyVoltage;
++
++  // Notify energy source
++
++  m_source->UpdateEnergySource ();
++
++  // Some debug message
++  NS_LOG_DEBUG ("GliderEnergyModel:Total energy consumption at node #" <<
++                m_node->GetId () << " is " << m_totalEnergyConsumption << "J");
++
++  //Calculate the energy in every time slot. A time slot is an interval of time where the power is constant (the speed vector is constant)
++
++  double energyToDecrease;
++  std::cout << "currentPower " << currentPowerglider << std::endl;
++  std::cout << "duration " << duration << std::endl;
++
++  energyToDecrease = duration.GetSeconds () *  currentPowerglider;
++
++  // Update the total energy consumption
++
++  m_totalEnergyConsumption += energyToDecrease;
++
++  std::cout << "m_totalEnergyConsumption " << m_totalEnergyConsumption << std::endl;
++
++  // Check if the required energy is less than the capacity of the battery
++
++  NS_ABORT_MSG_IF (m_totalEnergyConsumption > m_BatteryCapacity, "** REQUIRED DENERGY HAS TO BE < BATTERY CAPACITY ");
++  //Update the variable "m_lastUpdateTime"
++
++  if ( m_CountCycle != 0)
++    {
++      m_lastUpdateTime = Simulator::Now ();
++    }
++
++  //Update the variable the absorbed power
++
++  m_CountCycle = 1 + m_CountCycle;
++  if ( m_CountCycle != 0)
++    {
++      currentPowerglider = Powerglider;
++    }
++}
++
++void
++GliderEnergyModel::SetNode (Ptr<Node> node)
++{
++  NS_LOG_FUNCTION (this << node);
++  NS_ASSERT (node != NULL);
++  m_node = node;
++}
++
++Ptr<Node>
++GliderEnergyModel::GetNode (void) const
++{
++  return m_node;
++}
++
++void
++GliderEnergyModel::SetEnergySource (Ptr<EnergySource> source)
++{
++  NS_LOG_FUNCTION (this << source);
++  NS_ASSERT (source != NULL);
++  m_source = source;
++}
++
++double
++GliderEnergyModel::GetTotalEnergyConsumption (void) const
++{
++  NS_LOG_FUNCTION (this);
++
++  return m_totalEnergyConsumption;
++}
++
++void
++GliderEnergyModel::ChangeState (int newState)
++{
++  NS_FATAL_ERROR ("ChangeState not implemented, use ChangeEnergyConsumption instead.");
++}
++
++void
++GliderEnergyModel::SetEnergyDepletionCallback (GliderEnergyDepletionCallback callback)
++{
++  NS_LOG_FUNCTION (this);
++  if (callback.IsNull ())
++    {
++      NS_LOG_DEBUG ("GliderEnergyModel:Setting NULL energy depletion callback!");
++    }
++  m_energyDepletionCallback = callback;
++}
++
++void
++GliderEnergyModel::SetEnergyRechargedCallback (GliderEnergyRechargedCallback callback)
++{
++  NS_LOG_FUNCTION (this);
++  if (callback.IsNull ())
++    {
++      NS_LOG_DEBUG ("GliderEnergyModel:Setting NULL energy recharged callback!");
++    }
++  m_energyRechargedCallback = callback;
++}
++
++void
++GliderEnergyModel::HandleEnergyDepletion (void)
++{
++  NS_LOG_FUNCTION (this);
++  NS_LOG_DEBUG ("GliderEnergyModel:Energy is depleted at node #" <<
++                m_node->GetId ());
++
++  // invoke energy depletion callback, if set.
++  if (!m_energyDepletionCallback.IsNull ())
++    {
++      m_energyDepletionCallback ();
++    }
++}
++
++void
++GliderEnergyModel::HandleEnergyRecharged (void)
++{
++  NS_LOG_FUNCTION (this);
++  NS_LOG_DEBUG ("GliderEnergyModel:Energy is recharged at node #" <<
++                m_node->GetId ());
++
++  if (!m_energyRechargedCallback.IsNull ())
++    {
++      m_energyRechargedCallback ();
++    }
++}
++
++void
++GliderEnergyModel::HandleEnergyChanged (void)
++{
++
++}
++
++
++void
++GliderEnergyModel::DoDispose (void)
++{
++  NS_LOG_FUNCTION (this);
++  m_node = NULL;
++  m_source = NULL;
++  m_energyDepletionCallback.Nullify ();
++}
++
++double
++GliderEnergyModel::DoGetCurrentA (void) const
++{
++  NS_LOG_FUNCTION (this);
++
++  return m_actualCurrentDrain;
++
++}
++} // namespace ns3
++
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/glider-energy-model.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/glider-energy-model.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/glider-energy-model.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/glider-energy-model.h	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,179 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++#ifndef GLIDER_ENERGY_MODEL_H
++#define GLIDER_ENERGY_MODEL_H
++
++#include "ns3/device-energy-model.h"
++#include "ns3/energy-source.h"
++#include "ns3/traced-value.h"
++#include "ns3/log.h"
++#include "ns3/simulator.h"
++#include "ns3/mobility-model.h"
++
++
++namespace ns3 {
++
++/**
++ * A TYPHOON class AUV is a submarine-like device, propelled by the buoyancy of the system
++ *
++ /*/
++
++class GliderEnergyModel : public DeviceEnergyModel
++{
++public:
++  // / Callback type for energy depletion handling.
++  typedef Callback<void> GliderEnergyDepletionCallback;
++  typedef Callback<void> GliderEnergyRechargedCallback;
++
++public:
++  static TypeId GetTypeId (void);
++  GliderEnergyModel ();
++  virtual ~GliderEnergyModel ();
++
++  /**
++   * \brief Sets pointer to node.
++   *
++   * \param node Pointer to node.
++   *
++   * Implements DeviceEnergyModel::SetNode.
++   */
++  virtual void SetNode (Ptr<Node> node);
++
++  /**
++   * \brief Gets pointer to node.
++   *
++   * \returns Pointer to node.
++   *
++   * Implements DeviceEnergyModel::GetNode.
++   */
++  virtual Ptr<Node> GetNode (void) const;
++
++
++  /**
++   * \brief Sets pointer to EnergySouce installed on node.
++   *
++   * \param source Pointer to EnergySource installed on node.
++   *
++   * Implements DeviceEnergyModel::SetEnergySource.
++   */
++  virtual void SetEnergySource (Ptr<EnergySource> source);
++
++  /**
++   * \returns Total energy consumption of the vehicle.
++   *
++   * Implements DeviceEnergyModel::GetTotalEnergyConsumption.
++   */
++  virtual double GetTotalEnergyConsumption (void) const;
++
++  /**
++   * \param newState New state the device is in.
++   *
++   * DeviceEnergyModel is a state based model. This function is implemented by
++   * all child of DeviceEnergyModel to change the model's state. States are to
++   * be defined by each child using an enum (int).
++   */
++  virtual void ChangeState (int newState);
++
++
++  /**
++   * \param callback Callback function.
++   *
++   * Sets callback for energy depletion handling.
++   */
++  void SetEnergyDepletionCallback (GliderEnergyDepletionCallback callback);
++
++  /**
++   * \param callback Callback function.
++   *
++   * Sets callback for energy recharged handling.
++   */
++  void SetEnergyRechargedCallback (GliderEnergyRechargedCallback callback);
++
++  /**
++   * \brief Handles energy depletion.
++   *
++   * Implements DeviceEnergyModel::HandleEnergyDepletion
++   */
++  virtual void HandleEnergyDepletion (void);
++
++  /**
++   * \brief Handles energy recharge.
++   *
++   * Implements DeviceEnergyModel::HandleEnergyRecharged
++   */
++  virtual void HandleEnergyRecharged (void);
++
++  /**
++   * \brief Notify the model that the node mobility model changed its params
++   *
++   * \param model the mobility model.
++   *
++   */
++  void NotifyCourseChanged (Ptr<const MobilityModel>);
++
++    /**
++   * This function is called by the EnergySource object when energy stored in
++   * the energy source is changed. Should be implemented by child classes.
++   */
++  virtual void HandleEnergyChanged (void);
++
++private:
++  void DoDispose (void);
++
++  /**
++   * \returns Current draw of device, at current state.
++   *
++   * Implements DeviceEnergyModel::GetCurrentA.
++   */
++  virtual double DoGetCurrentA (void) const;
++
++
++private:
++  Ptr<Node> m_node;
++  Ptr<EnergySource> m_source;
++
++
++  // This variable keeps track of the total energy consumed by this particular model.
++  TracedValue<double> m_totalEnergyConsumption;
++
++
++  // actual current drain
++  double m_actualCurrentDrain;
++  // current navigation speed in m/s
++
++  // time stamp of previous energy update
++  Time m_lastUpdateTime;
++
++  // The power needed [W] is the product of buoyancy (in Newton) and the vertical speed.
++//Remember that GetBuoyancy returns a value in grammes
++//The capacity of the battery is 4320000 J
++  double m_BatteryCapacity;
++  Vector m_velocity;
++  double m_VelocityModule;
++  double m_currentSpeed;
++  int m_CountCycle;
++  // energy depletion callback
++  GliderEnergyDepletionCallback m_energyDepletionCallback;
++  GliderEnergyRechargedCallback m_energyRechargedCallback;
++};
++
++} // namespace ns3
++
++#endif /* GLIDER_ENERGY_MODEL_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/kinematic-constraints.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/kinematic-constraints.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/kinematic-constraints.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/kinematic-constraints.cc	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,47 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#include "kinematic-constraints.h"
++#include "ns3/type-id.h"
++
++namespace ns3 {
++
++TypeId
++KinematicConstraints::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::KinematicConstraints")
++    .SetParent (Object::GetTypeId ())
++    .SetGroupName ("Auv")
++  ;
++  return tid;
++}
++
++KinematicConstraints::KinematicConstraints ()
++{
++}
++
++
++KinematicConstraints::~KinematicConstraints ()
++{
++}
++
++}
++// namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/kinematic-constraints.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/kinematic-constraints.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/kinematic-constraints.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/kinematic-constraints.h	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,71 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#ifndef KINEMATIC_CONSTRAINTS_H_
++#define KINEMATIC_CONSTRAINTS_H_
++
++#include <list>
++#include "ns3/object.h"
++
++namespace ns3 {
++
++class Waypoint;
++
++/**
++ *
++ * Given a start "point" (3D space point and an absolute time) and a stop "point" (3D space point and an absolute time), using an
++ * underline mobility model suitable for AUV's (e.g. remus, glider, typhoon...), the CheckPath function will return a list of feasible intermediate points
++ * (x, y, z and Time)
++ *
++ */
++class KinematicConstraints : public Object
++
++{
++public:
++  static TypeId GetTypeId (void);
++  KinematicConstraints ();
++  virtual ~KinematicConstraints ();
++
++  /**
++   * The CheckPath function will return a list of feasible intermediate points (x, y, z and Time)
++   */
++  virtual std::list<Waypoint> CheckPath (const Waypoint &start, const Waypoint &stop) = 0;
++
++//Maximum depth and speeds
++
++protected:
++  double m_maxDepth;    //!< Maximum AUV depth
++  double m_maxSpeed;    //!< Maximum AUV (horizontal) speed [m/s]
++  double m_maxSpeedz;    //!< Maximum AUV (vertical) speed [m/s]
++  double m_headDirection; //!< Direction of the AUV head [radians w.r.t. the North]
++  double m_pitch;         //!< Pitch of the AUV [radians w.r.t. the horizon]
++  bool m_first;           //!< True if the AUV was not yet started.
++  double m_maxOmegaYaw;
++  double m_maxOmegaPitch;
++  double m_maxPitch;
++  double m_yaw;
++
++};
++
++} // namespace ns3
++
++#endif /* KINEMATIC_CONSTRAINTS_H_ */
++
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/remus-constraints.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-constraints.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/remus-constraints.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-constraints.cc	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,342 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++
++#include "remus-constraints.h"
++#include "ns3/log.h"
++#include "ns3/double.h"
++#include "ns3/nstime.h"
++#include "ns3/assert.h"
++#include "ns3/abort.h"
++
++
++
++namespace ns3 {
++
++NS_LOG_COMPONENT_DEFINE ("RemusConstraints");
++
++NS_OBJECT_ENSURE_REGISTERED (RemusConstraints);
++
++TypeId
++RemusConstraints::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::RemusConstraints")
++    .SetParent (KinematicConstraints::GetTypeId ())
++    .SetGroupName ("Auv")
++    .AddConstructor<RemusConstraints> ()
++    .AddAttribute ("MaxDepth", "The maximum operational depth, in m",
++                   DoubleValue (100.0),
++                   MakeDoubleAccessor (&RemusConstraints::m_maxDepth),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxSpeed", "The maximum speed of the vehicle, in m/s.",
++                   DoubleValue (2.3),
++                   MakeDoubleAccessor (&RemusConstraints::m_maxSpeed),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxOmegaPitch", "The maximum omega (along x-axis) of the vehicle, in radians/s.",
++                   DoubleValue (0.3),
++                   MakeDoubleAccessor (&RemusConstraints::m_maxOmegaPitch),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxOmegaYaw", "The maximum omega (along z-axis) of the vehicle, in radians/s.",
++                   DoubleValue (0.3),
++                   MakeDoubleAccessor (&RemusConstraints::m_maxOmegaYaw),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxPitch", "The maximum pitch angle of the vehicle (absolute value = 60°) , in radians/s.",
++                   DoubleValue (1.05),
++                   MakeDoubleAccessor (&RemusConstraints::m_maxPitch),
++                   MakeDoubleChecker<double> ())
++  ;
++  return tid;
++}
++
++RemusConstraints::RemusConstraints ()
++  : m_first (0)
++{
++}
++
++RemusConstraints::~RemusConstraints ()
++{
++}
++
++/*/Initialize m_first (support variable) at zero. We suppose that, during the first step,
++the robot is aligned with the next waypoint, therefore we don't want to have any rotation during the first run.
++/*/
++
++
++std::list<Waypoint>
++RemusConstraints::CheckPath (const Waypoint &start, const Waypoint &stop)
++{
++  std::list<Waypoint> ret;
++//support variables for times calculation (used later)
++  Time intermediateStepTime = Seconds (0);
++  Time intermediateStepTime2 = Seconds (0);
++
++//Check if the required depth is negative
++  NS_ABORT_MSG_IF (stop.position.z < 0, "** THE DEPTH HAS TO  NON-NEGATIVE");
++//Check if the required depth is minor than the the maximum operational depth
++  NS_ABORT_MSG_IF (stop.position.z > m_maxDepth, "** REQUIRED DEPTH HAS TO BE < MAXIMUM OPERATIONAL DEPTH");
++//Calculate the required pitch angle
++  double requiredPitch = std::atan2 (stop.position.z - start.position.z, stop.position.x - start.position.x);
++  std::cout << "REQUIRED PITCH " << requiredPitch << std::endl;
++//the required head direction (yaw) of the robot
++  double requiredYaw;
++  double requiredYaw2;
++/*/Check if next position is within a cone of amplitude 2*m_maxPitch (namely 120°) centered in the actual position
++  (therefore, if the next position is reachable considering the limitation for the pitch angle).
++  It is worth to note that two cones, horizzontally disposed, are present (both with the top centered on the "start point")
++  Two subcases arise:
++                                          - SUBCASE 1) OUT OF THE CONE
++                                          - SUBCASE 2) WITHIN THE CONE
++
++/*/
++//SUBCASE 1) OUT OF THE CONE
++  if ( std::abs (requiredPitch) >= m_maxPitch && std::abs (requiredPitch) < 2 * m_maxPitch  )
++    {
++      std::cout << "OUT OF THE CONE " << std::endl;
++// Find the required yaw angle. The angle returns in radians.
++      requiredYaw = std::atan2 (stop.position.y - start.position.y, stop.position.x - start.position.x);
++      std::cout << "REQUIRED YAW " << requiredYaw << std::endl;
++      std::cout << "ACTUAL YAW (BEFORE YAW ROTATION)" << m_Yaw << std::endl;
++/*/Align the robot on the x-y plane. This operation doesn't occur: during the first run (look at variable "m_first")
++and if the required angle ( "requiredYaw" ) is the same as the actual one ( "m_Yaw" )
++/*/
++      if (m_first != 0 && m_Yaw != requiredYaw )
++        {
++//Define a new waypoint (centered on start and with the time required to reach "requiredYaw"
++          Waypoint rotationyaw = start;
++/*/If I am in a singular point ( when "atan2" has an indeterminate form ) don't change anything.
++In other words, the robot is maintained in the same attitude
++/*/
++          if (stop.position.x == start.position.x && stop.position.y == start.position.y )
++            {
++//The robot is maintained in the same attitude
++              requiredYaw = m_Yaw;
++            }
++          else
++            {
++//Find the time to reach the required yaw angle
++              rotationyaw.time = start.time + Seconds (std::abs ((std::abs (requiredYaw) - std::abs (m_Yaw))) / (m_maxOmegaYaw));
++              std::cout << "ROTATION YAW TIME " << rotationyaw.time << std::endl;
++//Check rotation time for the yaw angle
++              NS_ABORT_MSG_IF (stop.time < rotationyaw.time, "** STOP TIME HAS TO BE > ROTATION YAW TIME");
++              ret.push_back (rotationyaw);
++//The actual yaw angle ("m_Yaw") becomes "requiredYaw"
++              m_Yaw = requiredYaw;
++            }
++          std::cout << "ACTUAL YAW (AFTER YAW ROTATION)" << m_Yaw << std::endl;
++//support variable for times calculation
++          intermediateStepTime = rotationyaw.time;
++        }
++/*/ SUBCASE 1) OUT OF THE CONE two other subcases arise:
++                         - SUBCASE 1a) If "stop.position.z"-"start.position.z" > 0 the robot has to go down, so the pitch angle is negative.
++                         - SUBCASE 1b) if "stop.position.z"-"start.position.z" < 0 the robot has to go up, so the pitch angle is positive.
++ The pitch angle is set at the maximum possible value.
++/*/
++
++/*/SUBCASE 1a): "stop.position.z"-"start.position.z" > 0
++                                                The robot submerges unless it reaches the required depth
++/*/
++      if ( stop.position.z - start.position.z > 0)
++        {
++//Define a new waypoint centered on "rotationyaw" and with the time required to reach "|m_maxPitch|"
++          Waypoint rotationpitch = start;
++          rotationpitch.time = intermediateStepTime + Seconds (m_maxPitch / (m_maxOmegaPitch));
++          std::cout << "ROTATION PITCH " << rotationpitch << std::endl;
++//Check rotation time for the pitch angle
++          NS_ABORT_MSG_IF (stop.time < rotationpitch.time, "** STOP TIME HAS TO BE > ROTATION YAW + PITCH TIME ");
++          ret.push_back (rotationpitch);
++//support variable for times calculation
++          const double intermediateStepTime2 = (rotationpitch.time).ToDouble (ns3::Time::S);
++          const double StopTime = (stop.time).ToDouble (ns3::Time::S);
++//Set the speed as the maximum and find the time that is necessary to reach the z-coordinate of the stop point.
++          double SpacetoTravel = std::abs (stop.position.z - start.position.z) / sin (m_maxPitch);
++          double TimetoTravel = SpacetoTravel / m_maxSpeed + intermediateStepTime2;
++          std::cout << "SPACE TO TRAVEL " << SpacetoTravel << std::endl;
++          std::cout << "TIME TO TRAVEL " << TimetoTravel << std::endl;
++//Check time to travel
++          NS_ABORT_MSG_IF (TimetoTravel > StopTime, "** TIME TO TRAVEL HAS TO BE < STOP TIME");
++//Find the coordinates of the point after the travel
++//Define a new waypoint at the required depth after the dive at |m_maxPitch| angle
++          Waypoint travel;
++          travel.position.x = std::abs (stop.position.z - start.position.z) * (1 / tan (m_maxPitch)) * cos (requiredYaw) + start.position.x;
++          travel.position.y = std::abs (stop.position.z - start.position.z) * (1 / tan (m_maxPitch)) * sin (requiredYaw) + start.position.y;
++          travel.position.z = stop.position.z;
++          travel.time = Seconds (TimetoTravel);
++          std::cout << "TRAVEL " << travel << std::endl;
++          ret.push_back (travel);
++//Add the time to set newly the pitch as zero as well
++//The waypoint "travel pitch" is centred on "travel" plus the time to set newly the pitch at zero
++          Waypoint travelpitch;
++          travelpitch = travel;
++          travelpitch.time = travel.time + Seconds (m_maxPitch / (m_maxOmegaPitch));
++//Check rotation time for the waypoint "travel pitch"
++          NS_ABORT_MSG_IF (stop.time < travelpitch.time, "** STOP TIME HAS TO BE > TRAVEL PITCH");
++          ret.push_back (travelpitch);
++          std::cout << "TRAVEL PITCH " << travelpitch << std::endl;
++//Rotate of 3.14 rad the yaw again
++          requiredYaw2 = std::atan2 (stop.position.y - travel.position.y, stop.position.x - travel.position.x);
++//The waypoint "rotationyaw2" is centred on "travelpitch" plus the time to rotate the yaw angle of 3.14
++          Waypoint rotationyaw2 = travel;
++          rotationyaw2.time = travelpitch.time + Seconds (std::abs ((std::abs (requiredYaw2) - std::abs (m_Yaw))) / (m_maxOmegaYaw));
++//Check rotation time for the yaw angle
++          NS_ABORT_MSG_IF (stop.time < rotationyaw2.time, "** STOP TIME HAS TO BE > ROTATION YAW2 TIME");
++          ret.push_back (rotationyaw2);
++          std::cout << "ROTATION YAW " << rotationyaw2 << std::endl;
++//Update the yaw angle
++          m_Yaw = requiredYaw2;
++          requiredYaw = requiredYaw2;
++/*/Find that speed that permits you to reach the stop point at the stop time.
++   First of all, calculate the module  (at this point we are on a plane).
++/*/
++          double distance = std::sqrt ((stop.position.x - rotationyaw2.position.x) * (stop.position.x - rotationyaw2.position.x) + (stop.position.y - rotationyaw2.position.y) * (stop.position.y - rotationyaw2.position.y));
++          std::cout << "DISTANCE " << distance << std::endl;
++          const double lastStepTime = (stop.time - rotationyaw2.time).ToDouble (ns3::Time::S);
++          double required_speed = (distance) / (lastStepTime);
++          std::cout << "REQUIRED SPEED " << required_speed << std::endl;
++          //Check required speed
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < MAX SPEED");
++          ret.push_back (stop);
++        }
++      /*/SUBCASE 1b): "stop.position.z"-"start.position.z" < 0
++                                                The robot emerges unless it reaches the required depth
++      /*/
++      else
++        {
++//Define a new waypoint centered on "rotationyaw" and with the time required to reach "|m_maxPitch|"
++          Waypoint rotationpitch = start;
++          rotationpitch.time = intermediateStepTime + Seconds (m_maxPitch / (m_maxOmegaPitch));
++          std::cout << "ROTATION PITCH " << rotationpitch << std::endl;
++//Check rotation time for the pitch angle
++          NS_ABORT_MSG_IF (stop.time < rotationpitch.time, "** STOP TIME HAS TO BE > ROTATION YAW + PITCH TIME ");
++          ret.push_back (rotationpitch);
++//support variable for times calculation
++          const double intermediateStepTime2 = (rotationpitch.time).ToDouble (ns3::Time::S);
++          const double StopTime = (stop.time).ToDouble (ns3::Time::S);
++//Set the speed as the maximum and find the time that is necessary to reach the z-coordinate of the stop point.
++          double SpacetoTravel = std::abs (stop.position.z - start.position.z) / sin (m_maxPitch);
++          double TimetoTravel = SpacetoTravel / m_maxSpeed + intermediateStepTime2;
++          std::cout << "SPACE TO TRAVEL " << SpacetoTravel << std::endl;
++          std::cout << "TIME TO TRAVEL " << TimetoTravel << std::endl;
++//Check time to travel
++          NS_ABORT_MSG_IF (TimetoTravel > StopTime, "** TIME TO TRAVEL HAS TO BE < STOP TIME");
++//Find the coordinates of the point after the travel
++//Define a new waypoint at the required depth after the dive at |m_maxPitch| angle
++          Waypoint travel;
++          travel.position.x = std::abs (stop.position.z - start.position.z) * (1 / tan (m_maxPitch)) * cos (requiredYaw) + start.position.x;
++          travel.position.y = std::abs (stop.position.z - start.position.z) * (1 / tan (m_maxPitch)) * sin (requiredYaw) + start.position.y;
++          travel.position.z = stop.position.z;
++//Add the time to set newly the pitch as zero as well
++          travel.time = Seconds (TimetoTravel);
++          ret.push_back (travel);
++          std::cout << "TRAVEL " << travel << std::endl;
++//Add the time to set newly the pitch as zero as well
++//The waypoint "travel pitch" is centred on "travel" plus the time to set newly the pitch at zero
++          Waypoint travelpitch;
++          travelpitch = travel;
++          travelpitch.time = travel.time + Seconds (m_maxPitch / (m_maxOmegaPitch));
++//Check rotation time for the waypoint "travel pitch"
++          NS_ABORT_MSG_IF (stop.time < travelpitch.time, "** STOP TIME HAS TO BE > TRAVEL PITCH");
++          ret.push_back (travelpitch);
++          std::cout << "TRAVEL PITCH " << travelpitch << std::endl;
++          ret.push_back (travelpitch);
++//Rotate of 3.14 rad the yaw again
++          requiredYaw2 = std::atan2 (stop.position.y - travel.position.y, stop.position.x - travel.position.x);
++//The waypoint "rotationyaw2" is centred on "travelpitch" plus the time to rotate the yaw angle of 3.14
++          Waypoint rotationyaw2 = travel;
++          rotationyaw2.time = travelpitch.time + Seconds (std::abs ((std::abs (requiredYaw2) - std::abs (m_Yaw))) / (m_maxOmegaYaw));
++//Check rotation time for the yaw angle
++          NS_ABORT_MSG_IF (stop.time < rotationyaw2.time, "** STOP TIME HAS TO BE > ROTATION YAW2 TIME");
++          ret.push_back (rotationyaw2);
++          std::cout << "ROTATION yaw2 " << rotationyaw2 << std::endl;
++          m_Yaw = requiredYaw2;
++          requiredYaw = requiredYaw2;
++/*/ Find that speed that permits you to reach the stop point at the stop time.
++    First of all, calculate the module  (at this point we are on a plane).
++/*/
++          double distance = std::sqrt ((stop.position.x - rotationyaw2.position.x) * (stop.position.x - rotationyaw2.position.x) + (stop.position.y - rotationyaw2.position.y) * (stop.position.y - rotationyaw2.position.y));
++          std::cout << "DISTANCE " << distance << std::endl;
++          const double lastStepTime = (stop.time - rotationyaw2.time).ToDouble (ns3::Time::S);
++          double required_speed = (distance) / (lastStepTime);
++          std::cout << "REQUIRED SPEED " << required_speed << std::endl;
++          //Check required speed
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < MAX SPEED");
++          ret.push_back (stop);
++        }
++    }
++
++  /*/Check if next position is within a cone of amplitude 120° centered in the actual position
++    (therefore, if the next position is reachable considering the limitation for the yaw angle).
++    SUBCASE 2): NOT OUT OF THE CONE
++  /*/
++  else
++    {
++// Find the required yaw angle.
++      requiredYaw = std::atan2 (stop.position.y - start.position.y, stop.position.x - start.position.x);
++      std::cout << "REQUIRED YAW (WITHIN THE CONE)" << requiredYaw << std::endl;
++/*/Check if variable "m_first" is zero. This occurs only during the first run, in fact at the end of the CheckPath function, variable avoidFirstRotation is set at 1.
++   If so, any rotation is made.
++   Moreover, any rotation has to be made if "headDirection" (actual yaw angle) and "required_headDirection" (required yaw angle) have the same value.
++/*/
++      if (m_first != 0 && m_Yaw != requiredYaw )
++        {
++//The waypoint "rotationyaw" is centered on the defined waypoint "start" (with the required time for the yaw rotation)
++          Waypoint rotationyaw = start;
++          rotationyaw.time = start.time + Seconds (std::abs ((std::abs (requiredYaw) - std::abs (m_Yaw))) / (m_maxOmegaYaw));
++          std::cout << "ROTATION YAW TIME (WITHIN THE CONE) " << rotationyaw.time << std::endl;
++//Check rotation time for the yaw angle
++          NS_ABORT_MSG_IF (stop.time < rotationyaw.time, "** STOP TIME HAS TO BE > ROTATION YAW TIME");
++          ret.push_back (rotationyaw);
++          intermediateStepTime = rotationyaw.time;
++          m_Yaw = requiredYaw;
++        }
++      if ( requiredPitch != 0 )
++        {
++//Since the robot is already aligned towards the next point, the required pitch is always ranged between ( -60°; 60° )
++          requiredPitch = std::min (std::abs (requiredPitch),std::abs (requiredPitch - 3.14));
++//Define a new waypoint centered on "rotationyaw" and with the time required to reach "|m_maxPitch|"
++          Waypoint rotationpitch = start;
++/*/Add the time to set newly the pitch as zero as well. In theory, it should be add at the start of the new cycle.
++   On the other hand, as first approach, we can consider two times this value at this point. (Note that this is an assumption).
++/*/
++          rotationpitch.time = intermediateStepTime + Seconds (std::abs (2 * requiredPitch) / (m_maxOmegaPitch));
++          intermediateStepTime = rotationpitch.time;
++          std::cout << "ROTATION PITCH (WITHIN THE CONE) " << rotationpitch << std::endl;
++          //Check rotation time for the pitch angle
++          NS_ABORT_MSG_IF (stop.time < rotationpitch.time, "** STOP TIME HAS TO BE > ROTATION YAW + PITCH TIME ");
++          ret.push_back (rotationpitch);
++        }
++// Find that speed that permits you to reach the stop point at the stop time. First of all, calculate the module
++      double distance = std::sqrt ((stop.position.x - start.position.x) * (stop.position.x - start.position.x) + (stop.position.y - start.position.y) * (stop.position.y - start.position.y) + (stop.position.z - start.position.z) * (stop.position.z - start.position.z));
++      std::cout << "DISTANCE (WITHIN THE CONE) " << distance << std::endl;
++      const double lastStepTime = (stop.time - intermediateStepTime).ToDouble (ns3::Time::S);
++      std::cout << "lastStepTime (WITHIN THE CONE) " << lastStepTime << std::endl;
++      double required_speed = (distance) / (lastStepTime);
++      std::cout << "REQUIRED SPEED (WITHIN THE CONE) " << required_speed << std::endl;
++      //Check required speed
++      NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < MAX SPEED");
++      ret.push_back (stop);
++    }
++/*/  Variable "m_first" is set at true .
++ Therefore, apart from the first run, the program has to check whether or not the robot is aligned with the next waypoint.
++/*/
++  m_first = 1;
++  return ret;
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/remus-constraints.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-constraints.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/remus-constraints.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-constraints.h	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,82 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++
++#ifndef REMUS_CONSTRAINTS_H_
++#define REMUS_CONSTRAINTS_H_
++
++
++#include "kinematic-constraints.h"
++#include "ns3/event-id.h"
++#include "ns3/waypoint.h"
++
++
++namespace ns3 {
++
++/**
++ *
++ *
++ *
++ *
++ * A REMUS class AUV is an submarine-like device, propelled by an electric motor linked with a propeller.
++ *
++ * The model is based on the characteristics of the REMUS 100 AUV [1]:
++ *
++ * - maximum operating depth, 100 m
++ * - maximum speed, 2.3 m/s
++ * - pitch range 60°
++ *
++ * References:
++ * [1] https://www.km.kongsberg.com/ks/web/nokbg0397.nsf/AllWeb/82C0D4915CE64FEAC1257A23002BECC5/$file/REMUS-brochure.pdf?OpenElement
++ *
++ *
++ * The function CheckPath gives a list of feasible intermediate waypoints between a start ("start") and an end point ("stop").
++ *
++ * Considering the cinematic constraints of the robot, given these two points, the situation goes as follow:
++ *
++ * - firstly (if necessary), the robot ascends or descends at the depth of the "stop" point (remember that the maximum operating pitch range is 60°);
++ * - then (if necessary), it rotates along the z-axis in order to align itself towards the "stop" point;
++ * - then (if necessary), it goes straight towards the "stop" point
++ /*/
++
++class RemusConstraints : public KinematicConstraints
++{
++public:
++  static TypeId GetTypeId (void);
++  RemusConstraints ();
++  ~RemusConstraints ();
++
++  virtual std::list<Waypoint> CheckPath (const Waypoint &start, const Waypoint &stop);
++
++
++private:
++  double m_maxDepth;
++  double m_maxSpeed;
++  double m_maxOmegaYaw;
++  double m_maxOmegaPitch;
++  double m_maxPitch;
++  double m_Yaw;
++  int m_first;
++
++
++};
++
++}  // namespace ns3
++
++#endif /* REMUS_CONSTRAINTS_H_ */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/remus-constraintsv2.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-constraintsv2.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/remus-constraintsv2.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-constraintsv2.cc	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,355 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++
++#include "remus-constraintsv2.h"
++#include "ns3/log.h"
++#include "ns3/double.h"
++#include "ns3/nstime.h"
++#include "ns3/assert.h"
++#include "ns3/abort.h"
++
++
++
++namespace ns3 {
++
++NS_LOG_COMPONENT_DEFINE ("RemusConstraintsv2");
++
++NS_OBJECT_ENSURE_REGISTERED (RemusConstraintsv2);
++
++TypeId
++RemusConstraintsv2::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::RemusConstraintsv2")
++    .SetParent (KinematicConstraints::GetTypeId ())
++    .SetGroupName ("Auv")
++    .AddConstructor<RemusConstraintsv2> ()
++    .AddAttribute ("MaxDepth", "The maximum operational depth, in m",
++                   DoubleValue (100.0),
++                   MakeDoubleAccessor (&RemusConstraintsv2::m_maxDepth),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxSpeed", "The maximum speed of the vehicle, in m/s.",
++                   DoubleValue (2.3),
++                   MakeDoubleAccessor (&RemusConstraintsv2::m_maxSpeed),
++                   MakeDoubleChecker<double> ())
++
++    .AddAttribute ("MaxOmegaPitch", "The maximum omega (along x-axis) of the vehicle, in radians/s.",
++                   DoubleValue (0.3),
++                   MakeDoubleAccessor (&RemusConstraintsv2::m_maxOmegaPitch),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxOmegaYaw", "The maximum omega (along z-axis) of the vehicle, in radians/s.",
++                   DoubleValue (0.3),
++                   MakeDoubleAccessor (&RemusConstraintsv2::m_maxOmegaYaw),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxPitch", "The maximum pitch angle of the vehicle (absolute value = 60°) , in radians/s.",
++                   DoubleValue (1.05),
++                   MakeDoubleAccessor (&RemusConstraintsv2::m_maxPitch),
++                   MakeDoubleChecker<double> ())
++  ;
++  return tid;
++}
++
++RemusConstraintsv2::RemusConstraintsv2 ()
++  : m_first (0)
++{
++}
++
++RemusConstraintsv2::~RemusConstraintsv2 ()
++{
++}
++
++/*/Initialize m_first (support variable) at zero. We suppose that, during the first step,
++the robot is aligned with the next waypoint, therefore we don't want to have any rotation during the first run.
++/*/
++
++
++std::list<Waypoint>
++RemusConstraintsv2::CheckPath (const Waypoint &start, const Waypoint &stop)
++{
++  std::list<Waypoint> ret;
++
++  Time intermediateStepTime = Seconds (0);
++  Time intermediateStepTime2 = Seconds (0);
++
++
++  //Check if the required depth is negative
++  NS_ABORT_MSG_IF (stop.position.z < 0, "** THE DEPTH HAS TO  NON-NEGATIVE");
++  //Check if the required depth is minor than the the maximum operational depth
++  NS_ABORT_MSG_IF (stop.position.z > m_maxDepth, "** REQUIRED DEPTH HAS TO BE < MAXIMUM OPERATIONAL DEPTH");
++
++  double requiredPitch = std::atan2 (stop.position.z - start.position.z, stop.position.x - start.position.x);
++
++  double requiredYaw;
++  double requiredYaw2;
++  std::cout << "REQUIRED PITCH 2222 " << requiredPitch << std::endl;
++/*/Check if next position is within a cone of amplitude 120° centered in the actual position
++  (therefore, if the next position is reachable considering the limitation for the yaw angle).
++  SUBCASE: OUT OF THE CONE
++/*/
++
++  if ( std::abs (requiredPitch) >= m_maxPitch && std::abs (requiredPitch) <= 2 * m_maxPitch  )
++    {
++      std::cout << "OUT OF THE CONE " << std::endl;
++      std::cout << "m_first" << m_first << std::endl;
++
++      // Find the required yaw angle. The angle returns in radians.
++
++      requiredYaw = std::atan2 (stop.position.y - start.position.y, stop.position.x - start.position.x);
++      std::cout << "REQUIRED YAW " << requiredYaw << std::endl;
++      std::cout << "bhopoooooooo " << m_Yaw << std::endl;
++      /*/Align the robot on the x-y plane. This operation doesn't occur: during the first run (look at variable "m_first")
++      and if the required angle ( "requiredYaw" ) is the same as the actual one ( "m_Yaw" )
++      /*/
++      if (m_first != 0 && m_Yaw != requiredYaw )
++        {
++          Waypoint rotationyaw = start;
++          /*/If I am in a singular point ( when "atan2" has an indeterminate form ) don't change anything.
++              In other words, the robot is maintained in the same attitude
++              /*/
++          if (stop.position.x == start.position.x && stop.position.y == start.position.y )
++            {
++              requiredYaw = m_Yaw;
++            }
++          else
++            {
++              rotationyaw.time = start.time + Seconds (std::abs ((std::abs (requiredYaw) - std::abs (m_Yaw))) / (m_maxOmegaYaw));
++              std::cout << "ROTATION YAW TIME " << rotationyaw.time << std::endl;
++              //Check rotation time for the yaw angle
++              NS_ABORT_MSG_IF (stop.time < rotationyaw.time, "** STOP TIME HAS TO BE > ROTATION YAW TIME");
++              ret.push_back (rotationyaw);
++              m_Yaw = requiredYaw;
++            }
++          std::cout << "bhopoooooooo222222222222212 " << requiredYaw << std::endl;
++          intermediateStepTime = rotationyaw.time;
++        }
++
++      /*/ Set the maximum possible pitch angle. Two subcases:
++       if "stop.position.z"-"start.position.z" > 0 the robot has to go down, so the pitch angle is negative.
++       The other case is trivial.
++       SUBCASE: "stop.position.z"-"start.position.z" > 0
++       /*/
++
++      if ( stop.position.z - start.position.z > 0)
++        {
++          Waypoint rotationpitch = start;
++          rotationpitch.time = intermediateStepTime + Seconds (m_maxPitch / (m_maxOmegaPitch));
++          std::cout << "ROTATION YAW + PITCH TIME " << rotationpitch.time << std::endl;
++          //Check rotation time for the pitch angle
++          NS_ABORT_MSG_IF (stop.time < rotationpitch.time, "** STOP TIME HAS TO BE > ROTATION YAW + PITCH TIME ");
++          ret.push_back (rotationpitch);
++          const double intermediateStepTime2 = (rotationpitch.time).ToDouble (ns3::Time::S);
++          const double StopTime = (stop.time).ToDouble (ns3::Time::S);
++
++          /*/ Immerses along the line with slop = -tan(m_maxPitch) and centered in "start point" and find the intersection point
++                          with the line centered in "stop point" with slop = +tan(m_maxPitch)
++           /*/
++
++          double intersection_xp = (stop.position.z + tan (m_maxPitch) * stop.position.x) * (1 / tan (m_maxPitch) * 1 / 2);
++          std::cout << "intersection_xp" << intersection_xp << std::endl;
++          double intersection_zp = (stop.position.z + tan (m_maxPitch) * stop.position.x) * 1 / 2;
++          std::cout << "intersection_zp" << intersection_zp << std::endl;
++          double SpacetoTravel = std::sqrt (intersection_xp * intersection_xp + intersection_zp * intersection_zp);
++          double TimetoTravel = SpacetoTravel / m_maxSpeed + intermediateStepTime2;
++
++          Waypoint travel;
++          travel.position.x = SpacetoTravel * cos (m_maxPitch) * cos (requiredYaw) + start.position.x;
++          travel.position.y = SpacetoTravel * cos (m_maxPitch) * sin (requiredYaw) + start.position.y;
++          travel.position.z = SpacetoTravel * sin (m_maxPitch) + start.position.z;
++          travel.time = Seconds (TimetoTravel);
++          std::cout << "travel.position.x " << travel.position.x << std::endl;
++          std::cout << "travel.position.y " << travel.position.y << std::endl;
++          std::cout << "travel.position.z " << travel.position.z << std::endl;
++          ret.push_back (travel);
++
++          std::cout << "SPACE TO TRAVEL " << SpacetoTravel << std::endl;
++          std::cout << "TIME TO TRAVEL " << TimetoTravel << std::endl;
++
++          //Check time to travel
++          NS_ABORT_MSG_IF (TimetoTravel > StopTime, "** TIME TO TRAVEL HAS TO BE < STOP TIME");
++          std::cout << "AAAAAAAA " << requiredYaw << std::endl;
++          //Rotate of 180° and immerses with the same pitch
++          requiredYaw2 = std::atan2 (stop.position.y - travel.position.y, stop.position.x - travel.position.x);
++          std::cout << "REQUIRED YAW2  " << requiredYaw2 << std::endl;
++          Waypoint rotationyaw2 = travel;
++          rotationyaw2.time = travel.time + Seconds (3.14 / m_maxOmegaYaw);
++          std::cout << "ROTATION YAW2 TIME " << rotationyaw2.time << std::endl;
++          //Check rotation time for the yaw angle
++          NS_ABORT_MSG_IF (stop.time < rotationyaw2.time, "** STOP TIME HAS TO BE > ROTATION YAW2 TIME");
++          ret.push_back (rotationyaw2);
++          m_Yaw = requiredYaw2;
++          requiredYaw = requiredYaw2;
++
++
++          /*/ Find that speed that permits you to reach the stop point at the stop time.
++           First of all, calculate the module.
++           /*/
++
++          double distance = std::sqrt ((stop.position.x - rotationyaw2.position.x) * (stop.position.x - rotationyaw2.position.x) + (stop.position.y - rotationyaw2.position.y) * (stop.position.y - rotationyaw2.position.y) + (stop.position.z - rotationyaw2.position.z) * (stop.position.z - rotationyaw2.position.z));
++          std::cout << "DISTANCE " << distance << std::endl;
++          /*/Add the time to set the pitch at zero at the end of the cycle. This time reduce "lastStepTime", increasing "required_speed"
++          /*/
++          const double lastStepTime = (stop.time - rotationyaw2.time - Seconds (m_maxPitch / m_maxOmegaPitch)).ToDouble (ns3::Time::S);
++          double required_speed = (distance) / (lastStepTime);
++          std::cout << "REQUIRED SPEED " << required_speed << std::endl;
++
++          //Check required speed
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < MAX SPEED");
++          ret.push_back (stop);
++        }
++
++      /*/ Set the maximum possible pitch angle. Two subcases:
++       if "stop.position.z"-"start.position.z" > 0 the robot has to go down, so the pitch angle is negative.
++       The other case is trivial.
++       SUBCASE: "stop.position.z"-"start.position.z" < 0
++       /*/
++
++      else
++
++        {
++          Waypoint rotationpitch = start;
++          rotationpitch.time = intermediateStepTime + Seconds (m_maxPitch / (m_maxOmegaPitch));
++          std::cout << "ROTATION YAW + PITCH TIME " << rotationpitch.time << std::endl;
++          //Check rotation time for the pitch angle
++          NS_ABORT_MSG_IF (stop.time < rotationpitch.time, "** STOP TIME HAS TO BE > ROTATION YAW + PITCH TIME ");
++          ret.push_back (rotationpitch);
++          const double intermediateStepTime2 = (rotationpitch.time).ToDouble (ns3::Time::S);
++          const double StopTime = (stop.time).ToDouble (ns3::Time::S);
++
++          /*/ Immerses along the line with slop = -tan(m_maxPitch) and centered in "start point" and find the intersection point
++                          with the line centered in "stop point" with slop = +tan(m_maxPitch)
++           /*/
++          double intersection_xp = (stop.position.z + tan (m_maxPitch) * stop.position.x) * (1 / tan (m_maxPitch) * 1 / 2);
++          std::cout << "intersection_xp" << intersection_xp << std::endl;
++          double intersection_zp = (stop.position.z + tan (m_maxPitch) * stop.position.x) * 1 / 2;
++          std::cout << "intersection_zp" << intersection_zp << std::endl;
++          double SpacetoTravel = std::sqrt (intersection_xp * intersection_xp + intersection_zp * intersection_zp);
++          double TimetoTravel = SpacetoTravel / m_maxSpeed + intermediateStepTime2;
++
++          Waypoint travel;
++          travel.position.x = SpacetoTravel * cos (m_maxPitch) * cos (requiredYaw) + start.position.x;
++          travel.position.y = SpacetoTravel * cos (m_maxPitch) * sin (requiredYaw) + start.position.y;
++          travel.position.z = SpacetoTravel * sin (m_maxPitch) + start.position.z;
++          travel.time = Seconds (TimetoTravel);
++          std::cout << "travel.position.x " << travel.position.x << std::endl;
++          std::cout << "travel.position.y " << travel.position.y << std::endl;
++          std::cout << "travel.position.z " << travel.position.z << std::endl;
++          ret.push_back (travel);
++
++          std::cout << "SPACE TO TRAVEL " << SpacetoTravel << std::endl;
++          std::cout << "TIME TO TRAVEL " << TimetoTravel << std::endl;
++          //Check time to travel
++          NS_ABORT_MSG_IF (TimetoTravel > StopTime, "** TIME TO TRAVEL HAS TO BE < STOP TIME");
++          std::cout << "AAAAAAAA " << requiredYaw << std::endl;
++          //Find the coordinates of the point after the travel
++          requiredYaw2 = std::atan2 (stop.position.y - travel.position.y, stop.position.x - travel.position.x);
++          std::cout << "REQUIRED YAW2  " << requiredYaw2 << std::endl;
++          Waypoint rotationyaw2 = travel;
++          rotationyaw2.time = travel.time + Seconds (3.14 / m_maxOmegaYaw);
++          std::cout << "ROTATION YAW2 TIME " << rotationyaw2.time << std::endl;
++          //Check rotation time for the yaw angle
++          NS_ABORT_MSG_IF (stop.time < rotationyaw2.time, "** STOP TIME HAS TO BE > ROTATION YAW2 TIME");
++          ret.push_back (rotationyaw2);
++          m_Yaw = requiredYaw2;
++          requiredYaw = requiredYaw2;
++
++
++          /*/ Find that speed that permits you to reach the stop point at the stop time.
++           First of all, calculate the module.
++           /*/
++
++          double distance = std::sqrt ((stop.position.x - rotationyaw2.position.x) * (stop.position.x - rotationyaw2.position.x) + (stop.position.y - rotationyaw2.position.y) * (stop.position.y - rotationyaw2.position.y) + (stop.position.z - rotationyaw2.position.z) * (stop.position.z - rotationyaw2.position.z));
++          std::cout << "DISTANCE " << distance << std::endl;
++          /*/Add the time to set the pitch at zero at the end of the cycle. This time reduce "lastStepTime", increasing "required_speed"
++          /*/
++          const double lastStepTime = (stop.time - rotationyaw2.time - Seconds (m_maxPitch / m_maxOmegaPitch)).ToDouble (ns3::Time::S);
++          double required_speed = (distance) / (lastStepTime);
++          std::cout << "REQUIRED SPEED " << required_speed << std::endl;
++
++          //Check required speed
++          NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < MAX SPEED");
++          ret.push_back (stop);
++        }
++    }
++
++  /*/Check if next position is within a cone of amplitude 120° centered in the actual position
++    (therefore, if the next position is reachable considering the limitation for the yaw angle).
++    SUBCASE: NOT OUT OF THE CONE
++  /*/
++
++  else
++    {
++      // Find the required yaw angle. The angle returns in radians.
++      requiredYaw = std::atan2 (stop.position.y - start.position.y, stop.position.x - start.position.x);
++      std::cout << "REQUIRED YAW " << requiredYaw << std::endl;
++      //Align the robot on the x-y plane
++      if (m_first != 0 && m_Yaw != requiredYaw )
++        {
++          Waypoint rotationyaw = start;
++          std::cout << "m_Yaw1111" << m_Yaw << std::endl;
++          rotationyaw.time = start.time + Seconds (std::abs ((std::abs (requiredYaw) - std::abs (m_Yaw))) / (m_maxOmegaYaw));
++          std::cout << "ROTATION YAW TIME " << rotationyaw.time << std::endl;
++          //Check rotation time for the yaw angle
++          NS_ABORT_MSG_IF (stop.time < rotationyaw.time, "** STOP TIME HAS TO BE > ROTATION YAW TIME");
++          ret.push_back (rotationyaw);
++          intermediateStepTime = rotationyaw.time;
++
++        }
++      if ( requiredPitch != 0 )
++        {
++          //Since the robot is already aligned towards the next point, the required pitch is always ranged between ( -60°; 60° )
++          requiredPitch = std::min (std::abs (requiredPitch),std::abs (requiredPitch - 3.14));
++          //Find the necessary time for the pitch angle
++          Waypoint rotationpitch = start;
++          /*/Add the time to set newly the pitch as zero as well. In theory, it should be add at the start of the new cycle.
++           On the other hand, as first approach, we can consider two times this value at this point. (Note that this is an assumption).
++           /*/
++          rotationpitch.time = intermediateStepTime + Seconds (std::abs (requiredPitch) / (m_maxOmegaPitch));
++          intermediateStepTime = rotationpitch.time;
++          std::cout << "ROTATION YAW + PITCH TIME " << rotationpitch.time << std::endl;
++          //Check rotation time for the pitch angle
++          NS_ABORT_MSG_IF (stop.time < rotationpitch.time, "** STOP TIME HAS TO BE > ROTATION YAW + PITCH TIME ");
++          ret.push_back (rotationpitch);
++
++        }
++      // Find that speed that permits you to reach the stop point at the stop time. First of all, calculate the module
++      double distance = std::sqrt ((stop.position.x - start.position.x) * (stop.position.x - start.position.x) + (stop.position.y - start.position.y) * (stop.position.y - start.position.y) + (stop.position.z - start.position.z) * (stop.position.z - start.position.z));
++      std::cout << "DISTANCE " << distance << std::endl;
++      const double lastStepTime = (stop.time - intermediateStepTime - Seconds (std::abs (requiredPitch) / (m_maxOmegaPitch))).ToDouble (ns3::Time::S);
++      std::cout << "lastStepTime " << lastStepTime << std::endl;
++      double required_speed = (distance) / (lastStepTime);
++      std::cout << "REQUIRED SPEED " << required_speed << std::endl;
++      m_Yaw = requiredYaw;
++      //Check required speed
++      NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < MAX SPEED");
++      ret.push_back (stop);
++
++    }
++
++/*/  Variable "m_first" is set at true .
++ Therefore, apart from the first run, the program has to check whether or not the robot is aligned with the next waypoint.
++/*/
++
++  m_first = 1;
++  std::cout << "m_Yaw !!!!!" << m_Yaw << std::endl;
++  return ret;
++
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/remus-constraintsv2.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-constraintsv2.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/remus-constraintsv2.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-constraintsv2.h	2020-06-24 14:03:59.186805000 -0300
+@@ -0,0 +1,81 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++
++#ifndef REMUS_CONSTRAINTSV2_H_
++#define REMUS_CONSTRAINTSV2_H_
++
++
++#include "kinematic-constraints.h"
++#include "ns3/event-id.h"
++#include "ns3/waypoint.h"
++
++
++namespace ns3 {
++
++/**
++ *
++ * A REMUS class AUV is an submarine-like device, propelled by an electric motor linked with a propeller.
++ *
++ * The model is based on the characteristics of the REMUS 100 AUV [1]:
++ *
++ * - maximum operating depth, 100 m
++ * - maximum speed, 2.3 m/s
++ * - pitch range 60°
++ *
++ * References:
++ * [1] https://www.km.kongsberg.com/ks/web/nokbg0397.nsf/AllWeb/82C0D4915CE64FEAC1257A23002BECC5/$file/REMUS-brochure.pdf?OpenElement
++ *
++ *
++ * The function CheckPath gives a list of feasible intermediate waypoints between a start ("start") and an end point ("stop").
++ *
++ * Considering the cinematic constraints of the robot, given these two points, the situation goes as follow:
++ *
++ * - firstly (if necessary), the robot ascends or descends at the depth of the "stop" point (remember that the maximum operating pitch range is 60°);
++ * - then (if necessary), it rotates along the z-axis in order to align itself towards the "stop" point;
++ * - then (if necessary), it goes straight towards the "stop" point
++ *
++ * The difference between "remus-constraints" e "remus-constraintsv2" takes place during the immersion/emersion step. Here the shortest path is considered.
++ /*/
++
++class RemusConstraintsv2 : public KinematicConstraints
++{
++public:
++  static TypeId GetTypeId (void);
++  RemusConstraintsv2 ();
++  ~RemusConstraintsv2 ();
++
++  virtual std::list<Waypoint> CheckPath (const Waypoint &start, const Waypoint &stop);
++
++
++private:
++  double m_maxDepth;
++  double m_maxSpeed;
++  double m_maxOmegaYaw;
++  double m_maxOmegaPitch;
++  double m_maxPitch;
++  double m_Yaw;
++  int m_first;
++
++
++};
++
++}  // namespace ns3
++
++#endif /* REMUS_CONSTRAINTSV2_H_ */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/remus-energy-model.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-energy-model.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/remus-energy-model.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-energy-model.cc	2020-06-24 14:03:59.190804000 -0300
+@@ -0,0 +1,287 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++#include "auv-waypoint-mobility-model.h"
++#include "remus-energy-model.h"
++
++
++NS_LOG_COMPONENT_DEFINE ("RemusEnergyModel");
++
++namespace ns3 {
++
++NS_OBJECT_ENSURE_REGISTERED (RemusEnergyModel);
++
++TypeId
++RemusEnergyModel::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::RemusEnergyModel")
++    .SetParent<DeviceEnergyModel> ()
++    .SetGroupName ("Auv")
++    .AddConstructor<RemusEnergyModel> ()
++    .AddAttribute ("PowerSpeedRatio",
++                   "Consumed power ratio with respect to motor speed",
++                   DoubleValue (83.0), // in W*s/m
++                   MakeDoubleAccessor (&RemusEnergyModel::m_powerSpeedRatio),
++                   MakeDoubleChecker<double> ())
++    .AddTraceSource ("TotalEnergyConsumption",
++                     "Total energy consumption of the radio device.",
++                     MakeTraceSourceAccessor (&RemusEnergyModel::m_totalEnergyConsumption),
++                     "ns3::TracedValueCallback::Double")
++    .AddAttribute ("BatteryCapacity", "The capacity of the battery, in J.",
++                   DoubleValue (5400000),
++                   MakeDoubleAccessor (&RemusEnergyModel::m_BatteryCapacity),
++                   MakeDoubleChecker<double> ())
++
++  ;
++  return tid;
++
++
++}
++
++RemusEnergyModel::RemusEnergyModel ()
++{
++  NS_LOG_FUNCTION (this);
++  m_currentSpeed = 0.0;
++  m_lastUpdateTime = Seconds (0.0);
++  m_energyDepletionCallback.Nullify ();
++  m_energyRechargedCallback.Nullify ();
++  m_node = NULL;
++  m_source = NULL;
++  m_VelocityModule = 0;
++  m_totalEnergyConsumption = 0;
++  m_CountCycle = 0;
++
++}
++
++RemusEnergyModel::~RemusEnergyModel ()
++{
++  m_energyDepletionCallback.Nullify ();
++  m_energyRechargedCallback.Nullify ();
++  m_node = NULL;
++  m_source = NULL;
++
++}
++double PowerRemus;
++double currentPowerRemus;
++
++
++void
++RemusEnergyModel::NotifyCourseChanged (Ptr<const MobilityModel>model)
++{
++
++  //Get the speed of the robot (3D Vector)
++
++  m_velocity = model->GetVelocity ();
++
++  //Get the module of the speed
++  m_VelocityModule = std::sqrt (m_velocity.x * m_velocity.x + m_velocity.y * m_velocity.y + m_velocity.z * m_velocity.z);
++  std::cout << "m_VelocityModule_______ " << m_VelocityModule << std::endl;
++  /*/ The power needed [W]:
++
++ - during the vertical motion is 700 W (speed = 0,3 m/s)
++ - during the horizontal motion is 300 W (speed = 1 m/s)
++
++ A linear dependency between power and velocity is supposed.
++
++   /*/
++
++  // If m_velocity.z is zero, the robot is moving on the plane, otherwise it's ascending or descending
++
++
++  PowerRemus =  m_VelocityModule * m_powerSpeedRatio;
++
++
++
++  //Initialize duration at zero seconds
++
++  Time duration = Seconds (0);
++
++  /*/Calculate the length of a time slot. A time slot is an interval of time where the speed vector is constant.
++   * Remember that the function NotifyCourseChanged is called every time that the speed vector changes.
++  /*/
++
++  if ( m_CountCycle != 0)
++    {
++      duration = Simulator::Now () - m_lastUpdateTime;
++    }
++
++  // Check if duration is valid
++
++  NS_ASSERT (duration.GetSeconds () >= 0);
++
++  //Get the supply voltage (V)
++
++  double supplyVoltage = m_source->GetSupplyVoltage ();
++
++  //Calculate the actual current (A)
++
++  m_actualCurrentDrain = currentPowerRemus / supplyVoltage;
++
++  // Notify energy source
++
++  m_source->UpdateEnergySource ();
++
++  // Some debug message
++  NS_LOG_DEBUG ("RemusEnergyModel:Total energy consumption at node #" <<
++                m_node->GetId () << " is " << m_totalEnergyConsumption << "J");
++
++  //Calculate the energy in every time slot. A time slot is an interval of time where the power is constant (the speed vector is constant)
++
++  double energyToDecrease;
++  std::cout << "currentPower " << currentPowerRemus << std::endl;
++  std::cout << "duration " << duration << std::endl;
++
++  energyToDecrease = duration.GetSeconds () *  currentPowerRemus;
++
++  // Update the total energy consumption
++
++  m_totalEnergyConsumption += energyToDecrease;
++
++  std::cout << "m_totalEnergyConsumption " << m_totalEnergyConsumption << std::endl;
++
++  // Check if the required energy is less than the capacity of the battery
++
++  NS_ABORT_MSG_IF (m_totalEnergyConsumption > m_BatteryCapacity, "** REQUIRED DENERGY HAS TO BE < BATTERY CAPACITY ");
++  //Update the variable "m_lastUpdateTime"
++
++  if ( m_CountCycle != 0)
++    {
++      m_lastUpdateTime = Simulator::Now ();
++    }
++
++  //Update the variable the absorbed power
++
++  m_CountCycle = 1 + m_CountCycle;
++  if ( m_CountCycle != 0)
++    {
++      currentPowerRemus = PowerRemus;
++    }
++}
++
++void
++RemusEnergyModel::SetNode (Ptr<Node> node)
++{
++  NS_LOG_FUNCTION (this << node);
++  NS_ASSERT (node != NULL);
++  m_node = node;
++}
++
++Ptr<Node>
++RemusEnergyModel::GetNode (void) const
++{
++  return m_node;
++}
++
++void
++RemusEnergyModel::SetEnergySource (Ptr<EnergySource> source)
++{
++  NS_LOG_FUNCTION (this << source);
++  NS_ASSERT (source != NULL);
++  m_source = source;
++}
++
++double
++RemusEnergyModel::GetTotalEnergyConsumption (void) const
++{
++  NS_LOG_FUNCTION (this);
++
++  return m_totalEnergyConsumption;
++}
++
++void
++RemusEnergyModel::ChangeState (int newState)
++{
++  NS_FATAL_ERROR ("ChangeState not implemented, use ChangeEnergyConsumption instead.");
++}
++
++void
++RemusEnergyModel::SetEnergyDepletionCallback (RemusEnergyDepletionCallback callback)
++{
++  NS_LOG_FUNCTION (this);
++  if (callback.IsNull ())
++    {
++      NS_LOG_DEBUG ("RemusEnergyModel:Setting NULL energy depletion callback!");
++    }
++  m_energyDepletionCallback = callback;
++}
++
++void
++RemusEnergyModel::SetEnergyRechargedCallback (RemusEnergyRechargedCallback callback)
++{
++  NS_LOG_FUNCTION (this);
++  if (callback.IsNull ())
++    {
++      NS_LOG_DEBUG ("RemusEnergyModel:Setting NULL energy recharged callback!");
++    }
++  m_energyRechargedCallback = callback;
++}
++
++void
++RemusEnergyModel::HandleEnergyDepletion (void)
++{
++  NS_LOG_FUNCTION (this);
++  NS_LOG_DEBUG ("RemusEnergyModel:Energy is depleted at node #" <<
++                m_node->GetId ());
++
++  // invoke energy depletion callback, if set.
++  if (!m_energyDepletionCallback.IsNull ())
++    {
++      m_energyDepletionCallback ();
++    }
++}
++
++void
++RemusEnergyModel::HandleEnergyRecharged (void)
++{
++  NS_LOG_FUNCTION (this);
++  NS_LOG_DEBUG ("RemusEnergyModel:Energy is recharged at node #" <<
++                m_node->GetId ());
++
++  if (!m_energyRechargedCallback.IsNull ())
++    {
++      m_energyRechargedCallback ();
++    }
++}
++
++void
++RemusEnergyModel::HandleEnergyChanged (void)
++{
++}
++
++
++void
++RemusEnergyModel::DoDispose (void)
++{
++  NS_LOG_FUNCTION (this);
++  m_node = NULL;
++  m_source = NULL;
++  m_energyDepletionCallback.Nullify ();
++}
++
++double
++RemusEnergyModel::DoGetCurrentA (void) const
++{
++  NS_LOG_FUNCTION (this);
++
++  return m_actualCurrentDrain;
++
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/remus-energy-model.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-energy-model.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/remus-energy-model.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/remus-energy-model.h	2020-06-24 14:03:59.190804000 -0300
+@@ -0,0 +1,197 @@
++/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2016 Tommaso Pecorella
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Tommaso Pecorella <tommaso.pecorella@unifi.it> Matteo Franchi <teofr89@hotmail.it>
++ */
++#ifndef REMUS_ENERGY_MODEL_H
++#define REMUS_ENERGY_MODEL_H
++
++#include "ns3/device-energy-model.h"
++#include "ns3/energy-source.h"
++#include "ns3/traced-value.h"
++#include "ns3/log.h"
++#include "ns3/simulator.h"
++#include "ns3/mobility-model.h"
++
++
++namespace ns3 {
++
++/**
++ *  A REMUS class AUV is an submarine-like device, propelled by an electric motor linked with a propeller.
++ *
++ * The model is based on the characteristics of the REMUS 100 AUV [1].
++ *
++ * References:
++ * [1] https://www.km.kongsberg.com/ks/web/nokbg0397.nsf/AllWeb/82C0D4915CE64FEAC1257A23002BECC5/$file/REMUS-brochure.pdf?OpenElement
++ *
++ *The power needed is 100 W (speed = 2,3 m/s). In fact, the robot with a battery capacity of 3,6 MJ can operate for 10 hours at 2,3 m/s.
++ *
++ *A linear dependency between power and velocity is supposed ----> the power consumption is 45 W if speed = 1 m/s
++ /*/
++
++class RemusEnergyModel : public DeviceEnergyModel
++{
++public:
++  // / Callback type for energy depletion handling.
++  typedef Callback<void> RemusEnergyDepletionCallback;
++  typedef Callback<void> RemusEnergyRechargedCallback;
++
++public:
++  static TypeId GetTypeId (void);
++  RemusEnergyModel ();
++  virtual ~RemusEnergyModel ();
++
++  /**
++   * \brief Sets pointer to node.
++   *
++   * \param node Pointer to node.
++   *
++   * Implements DeviceEnergyModel::SetNode.
++   */
++  virtual void SetNode (Ptr<Node> node);
++
++  /**
++   * \brief Gets pointer to node.
++   *
++   * \returns Pointer to node.
++   *
++   * Implements DeviceEnergyModel::GetNode.
++   */
++  virtual Ptr<Node> GetNode (void) const;
++
++
++  /**
++   * \brief Sets pointer to EnergySouce installed on node.
++   *
++   * \param source Pointer to EnergySource installed on node.
++   *
++   * Implements DeviceEnergyModel::SetEnergySource.
++   */
++  virtual void SetEnergySource (Ptr<EnergySource> source);
++
++  /**
++   * \returns Total energy consumption of the vehicle.
++   *
++   * Implements DeviceEnergyModel::GetTotalEnergyConsumption.
++   */
++  virtual double GetTotalEnergyConsumption (void) const;
++
++  /**
++   * \param newState New state the device is in.
++   *
++   * DeviceEnergyModel is a state based model. This function is implemented by
++   * all child of DeviceEnergyModel to change the model's state. States are to
++   * be defined by each child using an enum (int).
++   */
++  virtual void ChangeState (int newState);
++
++
++  /**
++   * \param callback Callback function.
++   *
++   * Sets callback for energy depletion handling.
++   */
++  void SetEnergyDepletionCallback (RemusEnergyDepletionCallback callback);
++
++  /**
++   * \param callback Callback function.
++   *
++   * Sets callback for energy recharged handling.
++   */
++  void SetEnergyRechargedCallback (RemusEnergyRechargedCallback callback);
++
++  /**
++   * \brief Handles energy depletion.
++   *
++   * Implements DeviceEnergyModel::HandleEnergyDepletion
++   */
++  virtual void HandleEnergyDepletion (void);
++
++  /**
++   * \brief Handles energy recharge.
++   *
++   * Implements DeviceEnergyModel::HandleEnergyRecharged
++   */
++  virtual void HandleEnergyRecharged (void);
++
++  /**
++   * \brief Notify the model that the node mobility model changed its params
++   *
++   * \param model the mobility model.
++   *
++   */
++  void NotifyCourseChanged (Ptr<const MobilityModel>);
++    /**
++   * This function is called by the EnergySource object when energy stored in
++   * the energy source is changed. Should be implemented by child classes.
++   */
++  virtual void HandleEnergyChanged (void);
++
++private:
++  void DoDispose (void);
++
++  /**
++   * \returns Current draw of device, at current state.
++   *
++   * Implements DeviceEnergyModel::GetCurrentA.
++   */
++  virtual double DoGetCurrentA (void) const;
++
++
++private:
++  Ptr<Node> m_node;
++  Ptr<EnergySource> m_source;
++
++
++  // This variable keeps track of the total energy consumed by this particular model.
++  TracedValue<double> m_totalEnergyConsumption;
++
++
++  // actual current drain
++  double m_actualCurrentDrain;
++  // current navigation speed in m/s
++
++  // time stamp of previous energy update
++  Time m_lastUpdateTime;
++
++  /*/ The constants are found as follow.
++
++ The power needed [W]:
++
++- during the vertical motion is 700 W (speed = 0,3 m/s)
++- during the horizontal motion is 300 W (speed = 1 m/s)
++
++A linear dependency between power and velocity is supposed.
++
++Therefore, m_powerSpeedRatioHorizontal is 300 [Ws/m], m_powerSpeedRatioVertical is 700/0.3 [Ws/m]
++   /*/
++  double m_powerSpeedRatio;
++
++//The capacity of the battery is 4320000 J
++  double m_BatteryCapacity;
++  Vector m_velocity;
++  double m_VelocityModule;
++  double m_currentSpeed;
++  int m_CountCycle;
++  // energy depletion callback
++  RemusEnergyDepletionCallback m_energyDepletionCallback;
++  RemusEnergyRechargedCallback m_energyRechargedCallback;
++};
++
++} // namespace ns3
++
++#endif /* REMUS_ENERGY_MODEL_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/typhoon-constraints.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/typhoon-constraints.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/typhoon-constraints.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/typhoon-constraints.cc	2020-06-24 14:03:59.190804000 -0300
+@@ -0,0 +1,182 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#include "kinematic-constraints.h"
++#include "typhoon-constraints.h"
++#include "ns3/log.h"
++#include "ns3/double.h"
++#include "ns3/nstime.h"
++#include "ns3/assert.h"
++#include "ns3/abort.h"
++
++
++namespace ns3 {
++
++NS_LOG_COMPONENT_DEFINE ("TyphoonConstraints");
++
++NS_OBJECT_ENSURE_REGISTERED (TyphoonConstraints);
++
++TypeId
++TyphoonConstraints::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::TyphoonConstraints")
++    .SetParent (KinematicConstraints::GetTypeId ())
++    .SetGroupName ("Auv")
++    .AddConstructor<TyphoonConstraints> ()
++    .AddAttribute ("MaxDepth", "The maximum operational depth, in m",
++                   DoubleValue (100.0),
++                   MakeDoubleAccessor (&TyphoonConstraints::m_maxDepth),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxSpeed", "The maximum (horizontal) speed of the vehicle, in m/s.",
++                   DoubleValue (1.5),
++                   MakeDoubleAccessor (&TyphoonConstraints::m_maxSpeed),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxSpeedz", "The maximum (vertical) speed of the vehicle, in m/s.",
++                   DoubleValue (0.26),
++                   MakeDoubleAccessor (&TyphoonConstraints::m_maxSpeedz),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("MaxOmega", "The maximum omega (along z-axis) of the vehicle, in rad/s.",
++                   DoubleValue (0.3),
++                   MakeDoubleAccessor (&TyphoonConstraints::m_maxOmega),
++                   MakeDoubleChecker<double> ())
++  ;
++  return tid;
++}
++/*/Initialize m_first (support variable) at "zero". We suppose that, during the first step,
++the robot is aligned with the next waypoint, therefore we don't want to have any rotation during the first run.
++/*/
++TyphoonConstraints::TyphoonConstraints ()
++  : m_headDirection (0), m_first (0)
++{
++}
++
++TyphoonConstraints::~TyphoonConstraints ()
++{
++}
++
++std::list<Waypoint>
++TyphoonConstraints::CheckPath (const Waypoint &start, const Waypoint &stop)
++{
++  std::list<Waypoint> ret;
++  //support variable for times calculation (used later)
++  Time intermediateStepTime = Seconds (0);
++  //the required head direction (yaw) of the robot
++  double requiredHeadDirection = std::atan2 (stop.position.y - start.position.y, stop.position.x - start.position.x);
++
++  //Check if the required depth is negative
++  NS_ABORT_MSG_IF (stop.position.z < 0, "** THE DEPTH HAS TO BE NON-NEGATIVE");
++  //Check if the required depth is minor than the the maximum operational depth
++  NS_ABORT_MSG_IF (stop.position.z > m_maxDepth, "** REQUIRED DEPTH HAS TO BE < MAXIMUM OPERATIONAL DEPTH");
++
++  /*/Two subcases arise:
++                                          - SUBCASE 1) "start point" and "stop point" are NOT at the same depth
++                                          - SUBCASE 2) "start point" and "stop point" are  at the same depth
++ /*/
++
++  //SUBCASE 1) "start point" and "stop point" are NOT at the same depth
++  //Check if "start point" and "stop point" and move along z-axis
++  if (stop.position.z != start.position.z)
++    {
++      //Go down
++      Waypoint down;
++      down.position = start.position;
++      down.position.z = stop.position.z;
++      std::cout << "DOWN POSITION " << down.position.z << std::endl;
++      /*/Two subcases (within SUBCASE 1) arise:
++                                          - SUBCASE 1a) I just have to go down
++                                          - SUBCASE 1b) I DO NOT just have to go down ("start point" and "stop point" have different x/y coordinates)
++/*/
++
++      //SUBCASE 1a): I just have to go down. Therefore, in this situation, I have to find the speed along z-axis (remember stop time is fixed)
++      if ( stop.position.x == start.position.x && stop.position.y == start.position.y )
++        {
++          const double stopTime = (stop.time).ToDouble (ns3::Time::S);
++          const double startTime = (start.time).ToDouble (ns3::Time::S);
++          //I have to find the speed along z-axis (remember stop time is fixed)
++          double requiredSpeedz = std::abs (stop.position.z - start.position.z) / (stopTime - startTime);
++          std::cout << "REQUIRED Z SPEED " << requiredSpeedz << std::endl;
++          //Check speed along z
++          NS_ABORT_MSG_IF (requiredSpeedz > m_maxSpeedz, "** REQUIRED Z SPEED HAS TO BE < MAXIMUM OPERATIONAL Z SPEED ");
++          down.time = stop.time;
++        }
++      //SUBCASE 1b): I DO NOT just have to go down.
++      else
++        {
++          //I have to set the speed along z-axis at m_maxSpeedz
++          down.time = Seconds (std::abs (stop.position.z - start.position.z) / (m_maxSpeedz)) + start.time;
++          std::cout << "DOWN TIME " << down.time << std::endl;
++          //Check down time
++          NS_ABORT_MSG_IF (stop.time < down.time, "** STOP TIME HAS TO BE > DOWN TIME");
++          ret.push_back (down);
++        }
++    }
++  // The continue of SUBCASE 1) "start point" and "stop point" are NOT at the same depth
++  // Check the next and actual x/y position. This check is made to avoid to find me newly in SUBCASE 1a)
++  // This if-cycle and the one of SUBCASE 1a) are separated,
++  // so if SUBCASE 2) arises ("start point" and "stop point" are  at the same depth) the run of SUBCASE 2) starts here
++  if (stop.position.x != start.position.x || stop.position.y != start.position.y)
++    {
++      //Find the required yaw angle. The angle returns in radians.
++      std::cout << "REQUIRED HEAD DIRECTION " << requiredHeadDirection << std::endl;
++      std::cout << "HEAD DIRECTION " << m_headDirection << std::endl;
++      /*/Check if variable "m_first" is zero. This occurs only during the first run, in fact at the end of the CheckPath function, variable avoidFirstRotation is set at 1.
++   If so, any rotation is made.
++   Moreover, any rotation has to be made if "headDirection" (actual yaw angle) and "required_headDirection" (required yaw angle) have the same value.
++/*/
++      if (m_first != 0 && m_headDirection != requiredHeadDirection )
++        {
++          //The waypoint "rotation" is centered on the previously defined waypoint "down" in SUBCASE 1a) (with the required time for the yaw rotation)
++          //In other words, the waypoint "rotation" is centered on "start" (but at the depth of "down") and with the required time for the yaw rotation)
++          Waypoint rotation = start;
++          rotation.position.z = stop.position.z;
++          rotation.time = start.time + Seconds (std::abs ((std::abs (requiredHeadDirection) - std::abs (m_headDirection))) / (m_maxOmega)) + Seconds (std::abs (stop.position.z - start.position.z) / (m_maxSpeedz));
++          std::cout << "ROTATION TIME " << rotation.time << std::endl;
++          //Check rotation time
++          NS_ABORT_MSG_IF (stop.time < rotation.time, "** STOP TIME HAS TO BE > ROTATION TIME");
++          ret.push_back (rotation);
++          std::cout << "QUIIII " << std::endl;
++          std::cout << "rotation.time " << rotation.time << std::endl;
++          intermediateStepTime = rotation.time;
++          //Set the head direction "m_headDirection" at the new value "required_headDirection"
++          m_headDirection = requiredHeadDirection;
++        }
++    }
++  //Find that speed that permits you to reach the "stop point" at the "stop time". First of all, calculate the module (at this point we are on a plane).
++  intermediateStepTime = start.time + Seconds (std::abs ((std::abs (requiredHeadDirection) - std::abs (m_headDirection))) / (m_maxOmega)) + Seconds (std::abs (stop.position.z - start.position.z) / (m_maxSpeedz));
++  double distance = std::sqrt ((stop.position.x - start.position.x) * (stop.position.x - start.position.x) + (stop.position.y - start.position.y) * (stop.position.y - start.position.y));
++  std::cout << "DISTANCE " << distance << std::endl;
++  std::cout << "INTERMEDIATE STEP TIME " << intermediateStepTime << std::endl;
++  //The difference between the "stop time" and the time of the last waypoint (namely "rotation")
++  const double lastStepTime = (stop.time - intermediateStepTime).ToDouble (ns3::Time::S);
++  double required_speed = (distance) / (lastStepTime);
++  std::cout << "REQUIRED SPEED " << required_speed << std::endl;
++  //Check required speed
++  NS_ABORT_MSG_IF (required_speed > m_maxSpeed, "** REQUIRED SPEED HAS TO BE < MAX SPEED");
++  ret.push_back (stop);
++  /*/Variable "m_first" is set at true . Therefore, apart from the first run, the program has to check whether or not the robot is aligned with the next waypoint.
++/*/
++  m_headDirection = requiredHeadDirection;
++  m_first = 1;
++  return ret;
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/typhoon-constraints.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/typhoon-constraints.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/typhoon-constraints.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/typhoon-constraints.h	2020-06-24 14:03:59.190804000 -0300
+@@ -0,0 +1,75 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#ifndef TYPHOON_CONSTRAINTS_H_
++#define TYPHOON_CONSTRAINTS_H_
++
++
++#include "kinematic-constraints.h"
++#include "ns3/event-id.h"
++#include "ns3/waypoint.h"
++
++
++namespace ns3 {
++
++/**
++ * A TYPHOON class AUV is an submarine-like device, propelled by some electric motors.
++ *
++ * The model is based on the characteristics of the TYPHOON AUV (DIEF University of Florence, MDM Lab) . The robot has 5 DOF.
++ *
++ * - maximum operating depth, 100 m
++ * - maximum speed (on a plane) 1.5 m/s
++ * - maximum speed (ascending or descending) 0.25 m/s
++ * - maximum rotational speed (along z-axis) 18°/s
++ * - the robot cannot move with a pitch angle different from zero.
++ *
++ * The function CheckPath gives a list of feasible intermediate waypoints between a start ("start") and an end point ("stop").
++ *
++ * Considering the cinematic constraints of the robot, given these two points, the situation goes as follow:
++ *
++ * - firstly (if necessary), the robot ascends or descends at the depth of the "stop" point;
++ * - then (if necessary), it rotates along the z-axis in order to align itself towards the "stop" point;
++ * - then (if necessary), it goes straight towards the "stop" point
++ */
++
++class TyphoonConstraints : public KinematicConstraints
++{
++public:
++  static TypeId GetTypeId (void);
++  TyphoonConstraints ();
++  ~TyphoonConstraints ();
++
++  virtual std::list<Waypoint> CheckPath (const Waypoint &start, const Waypoint &stop);
++
++
++private:
++  double m_maxDepth;
++  double m_maxSpeed;
++  double m_maxSpeedz;
++  double m_maxOmega;
++  double m_headDirection;
++  int m_first;
++
++};
++
++}  // namespace ns3
++
++#endif /* TYPHOON_CONSTRAINTS_H_ */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/typhoon-energy-model.cc ns-allinone-3.31_auv/ns-3.31/src/auv/model/typhoon-energy-model.cc
+--- ns-allinone-3.31/ns-3.31/src/auv/model/typhoon-energy-model.cc	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/typhoon-energy-model.cc	2020-06-24 14:03:59.190804000 -0300
+@@ -0,0 +1,268 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#include "auv-waypoint-mobility-model.h"
++#include "typhoon-energy-model.h"
++
++
++NS_LOG_COMPONENT_DEFINE ("TyphoonEnergyModel");
++
++namespace ns3 {
++
++NS_OBJECT_ENSURE_REGISTERED (TyphoonEnergyModel);
++
++TypeId
++TyphoonEnergyModel::GetTypeId (void)
++{
++  static TypeId tid = TypeId ("ns3::TyphoonEnergyModel")
++    .SetParent<DeviceEnergyModel> ()
++    .SetGroupName ("Auv")
++    .AddConstructor<TyphoonEnergyModel> ()
++    .AddAttribute ("PowerSpeedRatioLongitudinal",
++                   "Consumed power ratio with respect to motor speed (the motion is horizontal)",
++                   DoubleValue (110.0),                      // in W*(s/m)^3
++                   MakeDoubleAccessor (&TyphoonEnergyModel::m_powerSpeedRatioHorizontal),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("PowerSpeedRatioVertical",
++                   "Consumed power ratio with respect to motor speed",
++                   DoubleValue (1200),                       // in W*(s/m)^3
++                   MakeDoubleAccessor (&TyphoonEnergyModel::m_powerSpeedRatioVertical),
++                   MakeDoubleChecker<double> ())
++    .AddAttribute ("BatteryCapacity", "The capacity of the battery, in J.",
++                   DoubleValue (4320000),
++                   MakeDoubleAccessor (&TyphoonEnergyModel::m_BatteryCapacity),
++                   MakeDoubleChecker<double> ())
++    .AddTraceSource ("TotalEnergyConsumption",
++                     "Total energy consumption of the radio device.",
++                     MakeTraceSourceAccessor (&TyphoonEnergyModel::m_totalEnergyConsumption),
++                     "ns3::TracedValueCallback::Double")
++
++  ;
++  return tid;
++}
++
++TyphoonEnergyModel::TyphoonEnergyModel ()
++{
++  NS_LOG_FUNCTION (this);
++  m_currentSpeed = 0.0;
++  m_lastUpdateTime = Seconds (0.0);
++  m_energyDepletionCallback.Nullify ();
++  m_energyRechargedCallback.Nullify ();
++  m_node = NULL;
++  m_source = NULL;
++  m_VelocityModule = 0;
++  m_totalEnergyConsumption = 0;
++  m_firstUpdate = true;
++}
++
++TyphoonEnergyModel::~TyphoonEnergyModel ()
++{
++  m_energyDepletionCallback.Nullify ();
++  m_energyRechargedCallback.Nullify ();
++  m_node = NULL;
++  m_source = NULL;
++
++}
++
++double Power;
++double currentPower;
++
++
++void
++TyphoonEnergyModel::NotifyCourseChanged (Ptr<const MobilityModel>model)
++{
++
++  m_velocity = model->GetVelocity ();
++  m_VelocityModule = std::sqrt (m_velocity.x * m_velocity.x + m_velocity.y * m_velocity.y + m_velocity.z * m_velocity.z);
++
++  //  The power needed [W]:
++  // - during the vertical motion is 700 W (speed = 0,3 m/s)
++  // - during the horizontal motion is 300 W (speed = 1 m/s)
++  //
++  // A dependency between power and speed^3 is supposed.
++
++  if (m_velocity.z == 0 )
++    {
++      Power =  m_powerSpeedRatioHorizontal * pow(m_VelocityModule, 3.0);
++    }
++  else
++    {
++      Power =  m_powerSpeedRatioVertical * pow(m_VelocityModule, 3.0);
++    }
++
++  Time duration = Seconds (0);
++
++  //  Calculate the length of a time slot. A time slot is an interval of time where the speed vector is constant.
++  //  Remember that the function NotifyCourseChanged is called every time that the speed vector changes.
++  if (m_firstUpdate == false)
++    {
++      duration = Simulator::Now () - m_lastUpdateTime;
++    }
++
++  // Check if duration is valid
++
++  NS_ASSERT (duration.GetSeconds () >= 0);
++
++  double supplyVoltage = m_source->GetSupplyVoltage ();
++  m_actualCurrentDrain = currentPower / supplyVoltage;
++
++  m_source->UpdateEnergySource ();
++
++  NS_LOG_DEBUG ("TyphoonEnergyModel:Total energy consumption at node #" <<
++                m_node->GetId () << " is " << m_totalEnergyConsumption << "J");
++
++  //Calculate the energy in every time slot. A time slot is an interval of time where the power is constant (the speed vector is constant)
++
++  double energyToDecrease;
++  std::cout << "currentPower " << currentPower << std::endl;
++  std::cout << "duration " << duration << std::endl;
++
++  energyToDecrease = duration.GetSeconds () *  currentPower;
++
++  // Update the total energy consumption
++  m_totalEnergyConsumption += energyToDecrease;
++
++  std::cout << "m_totalEnergyConsumption " << m_totalEnergyConsumption << std::endl;
++
++  // Check if the required energy is less than the capacity of the battery
++  NS_ABORT_MSG_IF (m_totalEnergyConsumption > m_BatteryCapacity, "** REQUIRED DENERGY HAS TO BE < BATTERY CAPACITY ");
++
++  if (m_firstUpdate == false)
++    {
++      m_lastUpdateTime = Simulator::Now ();
++    }
++
++  //Update the variable the absorbed power
++  m_firstUpdate = false;
++  currentPower = Power;
++}
++
++void
++TyphoonEnergyModel::SetNode (Ptr<Node> node)
++{
++  NS_LOG_FUNCTION (this << node);
++  NS_ASSERT (node != NULL);
++  m_node = node;
++}
++
++Ptr<Node>
++TyphoonEnergyModel::GetNode (void) const
++{
++  return m_node;
++}
++
++void
++TyphoonEnergyModel::SetEnergySource (Ptr<EnergySource> source)
++{
++  NS_LOG_FUNCTION (this << source);
++  NS_ASSERT (source != NULL);
++  m_source = source;
++}
++
++double
++TyphoonEnergyModel::GetTotalEnergyConsumption (void) const
++{
++  NS_LOG_FUNCTION (this);
++
++  return m_totalEnergyConsumption;
++}
++
++void
++TyphoonEnergyModel::ChangeState (int newState)
++{
++  NS_FATAL_ERROR ("ChangeState not implemented, use ChangeEnergyConsumption instead.");
++}
++
++void
++TyphoonEnergyModel::SetEnergyDepletionCallback (TyphoonEnergyDepletionCallback callback)
++{
++  NS_LOG_FUNCTION (this);
++  if (callback.IsNull ())
++    {
++      NS_LOG_DEBUG ("TyphoonEnergyModel:Setting NULL energy depletion callback!");
++    }
++  m_energyDepletionCallback = callback;
++}
++
++void
++TyphoonEnergyModel::SetEnergyRechargedCallback (TyphoonEnergyRechargedCallback callback)
++{
++  NS_LOG_FUNCTION (this);
++  if (callback.IsNull ())
++    {
++      NS_LOG_DEBUG ("TyphoonEnergyModel:Setting NULL energy recharged callback!");
++    }
++  m_energyRechargedCallback = callback;
++}
++
++void
++TyphoonEnergyModel::HandleEnergyDepletion (void)
++{
++  NS_LOG_FUNCTION (this);
++  NS_LOG_DEBUG ("TyphoonEnergyModel:Energy is depleted at node #" <<
++                m_node->GetId ());
++
++  // invoke energy depletion callback, if set.
++  if (!m_energyDepletionCallback.IsNull ())
++    {
++      m_energyDepletionCallback ();
++    }
++}
++
++void
++TyphoonEnergyModel::HandleEnergyRecharged (void)
++{
++  NS_LOG_FUNCTION (this);
++  NS_LOG_DEBUG ("TyphoonEnergyModel:Energy is recharged at node #" <<
++                m_node->GetId ());
++
++  if (!m_energyRechargedCallback.IsNull ())
++    {
++      m_energyRechargedCallback ();
++    }
++}
++
++void
++TyphoonEnergyModel::HandleEnergyChanged (void)
++{
++}
++
++
++void
++TyphoonEnergyModel::DoDispose (void)
++{
++  NS_LOG_FUNCTION (this);
++  m_node = NULL;
++  m_source = NULL;
++  m_energyDepletionCallback.Nullify ();
++}
++
++double
++TyphoonEnergyModel::DoGetCurrentA (void) const
++{
++  NS_LOG_FUNCTION (this);
++
++  return m_actualCurrentDrain;
++
++}
++
++
++} // namespace ns3
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/model/typhoon-energy-model.h ns-allinone-3.31_auv/ns-3.31/src/auv/model/typhoon-energy-model.h
+--- ns-allinone-3.31/ns-3.31/src/auv/model/typhoon-energy-model.h	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/model/typhoon-energy-model.h	2020-06-24 14:03:59.190804000 -0300
+@@ -0,0 +1,200 @@
++/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
++/*
++ * Copyright (c) 2017 Universita' di Firenze, Italy
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation;
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ * Authors: Matteo Franchi <teofr89@hotmail.it>
++ *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
++ */
++
++#ifndef TYPHOON_ENERGY_MODEL_H
++#define TYPHOON_ENERGY_MODEL_H
++
++#include "ns3/device-energy-model.h"
++#include "ns3/energy-source.h"
++#include "ns3/traced-value.h"
++#include "ns3/log.h"
++#include "ns3/simulator.h"
++#include "ns3/mobility-model.h"
++
++
++namespace ns3 {
++
++/**
++ * A TYPHOON class AUV is an submarine-like device, propelled by some electric motors.
++ *
++ * The model is based on the characteristics of the TYPHOON AUV (DIEF University of Florence, MDM Lab) . The robot has 5 DOF.
++  The power needed [W]:
++
++- during the vertical motion is 700 W (speed = 0,3 m/s)
++- during the horizontal motion is 300 W (speed = 1 m/s)
++
++A linear dependency between power and velocity is supposed.
++
++ /*/
++
++class TyphoonEnergyModel : public DeviceEnergyModel
++{
++public:
++  // / Callback type for energy depletion handling.
++  typedef Callback<void> TyphoonEnergyDepletionCallback;
++  typedef Callback<void> TyphoonEnergyRechargedCallback;
++
++public:
++  static TypeId GetTypeId (void);
++  TyphoonEnergyModel ();
++  virtual ~TyphoonEnergyModel ();
++
++  /**
++   * \brief Sets pointer to node.
++   *
++   * \param node Pointer to node.
++   *
++   * Implements DeviceEnergyModel::SetNode.
++   */
++  virtual void SetNode (Ptr<Node> node);
++
++  /**
++   * \brief Gets pointer to node.
++   *
++   * \returns Pointer to node.
++   *
++   * Implements DeviceEnergyModel::GetNode.
++   */
++  virtual Ptr<Node> GetNode (void) const;
++
++
++  /**
++   * \brief Sets pointer to EnergySouce installed on node.
++   *
++   * \param source Pointer to EnergySource installed on node.
++   *
++   * Implements DeviceEnergyModel::SetEnergySource.
++   */
++  virtual void SetEnergySource (Ptr<EnergySource> source);
++
++  /**
++   * \returns Total energy consumption of the vehicle.
++   *
++   * Implements DeviceEnergyModel::GetTotalEnergyConsumption.
++   */
++  virtual double GetTotalEnergyConsumption (void) const;
++
++  /**
++   * \param newState New state the device is in.
++   *
++   * DeviceEnergyModel is a state based model. This function is implemented by
++   * all child of DeviceEnergyModel to change the model's state. States are to
++   * be defined by each child using an enum (int).
++   */
++  virtual void ChangeState (int newState);
++
++
++  /**
++   * \param callback Callback function.
++   *
++   * Sets callback for energy depletion handling.
++   */
++  void SetEnergyDepletionCallback (TyphoonEnergyDepletionCallback callback);
++
++  /**
++   * \param callback Callback function.
++   *
++   * Sets callback for energy recharged handling.
++   */
++  void SetEnergyRechargedCallback (TyphoonEnergyRechargedCallback callback);
++
++  /**
++   * \brief Handles energy depletion.
++   *
++   * Implements DeviceEnergyModel::HandleEnergyDepletion
++   */
++  virtual void HandleEnergyDepletion (void);
++
++  /**
++   * \brief Handles energy recharge.
++   *
++   * Implements DeviceEnergyModel::HandleEnergyRecharged
++   */
++  virtual void HandleEnergyRecharged (void);
++
++  /**
++   * \brief Notify the model that the node mobility model changed its params
++   *
++   * \param model the mobility model.
++   *
++   */
++  void NotifyCourseChanged (Ptr<const MobilityModel>);
++  /**
++   * This function is called by the EnergySource object when energy stored in
++   * the energy source is changed. Should be implemented by child classes.
++   */
++  virtual void HandleEnergyChanged (void);
++
++
++private:
++  void DoDispose (void);
++
++  /**
++   * \returns Current draw of device, at current state.
++   *
++   * Implements DeviceEnergyModel::GetCurrentA.
++   */
++  virtual double DoGetCurrentA (void) const;
++
++
++private:
++  Ptr<Node> m_node;
++  Ptr<EnergySource> m_source;
++
++
++  // This variable keeps track of the total energy consumed by this particular model.
++  TracedValue<double> m_totalEnergyConsumption;
++
++
++  // actual current drain
++  double m_actualCurrentDrain;
++  // current navigation speed in m/s
++
++  // time stamp of previous energy update
++  Time m_lastUpdateTime;
++
++  /*/ The constants are found as follow.
++
++ The power needed [W]:
++
++- during the vertical motion is 700 W (speed = 0,3 m/s)
++- during the horizontal motion is 300 W (speed = 1 m/s)
++
++A linear dependency between power and velocity is supposed.
++
++Therefore, m_powerSpeedRatioHorizontal is 300 [Ws/m], m_powerSpeedRatioVertical is 700/0.3 [Ws/m]
++   /*/
++  double m_powerSpeedRatioHorizontal;
++  double m_powerSpeedRatioVertical;
++//The capacity of the battery is 4320000 J
++  double m_BatteryCapacity;
++  Vector m_velocity;
++  double m_VelocityModule;
++  double m_currentSpeed;
++  bool m_firstUpdate;
++  // energy depletion callback
++  TyphoonEnergyDepletionCallback m_energyDepletionCallback;
++  TyphoonEnergyRechargedCallback m_energyRechargedCallback;
++};
++
++} // namespace ns3
++
++#endif /* TYPHOON_ENERGY_MODEL_H */
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/test/examples-to-run.py ns-allinone-3.31_auv/ns-3.31/src/auv/test/examples-to-run.py
+--- ns-allinone-3.31/ns-3.31/src/auv/test/examples-to-run.py	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/test/examples-to-run.py	2020-06-24 14:03:59.190804000 -0300
+@@ -0,0 +1,20 @@
++#! /usr/bin/env python
++## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
++
++# A list of C++ examples to run in order to ensure that they remain
++# buildable and runnable over time.  Each tuple in the list contains
++#
++#     (example_name, do_run, do_valgrind_run).
++#
++# See test.py for more information.
++cpp_examples = [
++    ("auv-types-comparison", "True", "True"),
++]
++
++# A list of Python examples to run in order to ensure that they remain
++# runnable over time.  Each tuple in the list contains
++#
++#     (example_name, do_run).
++#
++# See test.py for more information.
++python_examples = []
+diff -ruN ns-allinone-3.31/ns-3.31/src/auv/wscript ns-allinone-3.31_auv/ns-3.31/src/auv/wscript
+--- ns-allinone-3.31/ns-3.31/src/auv/wscript	1969-12-31 21:00:00.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/auv/wscript	2020-06-24 14:03:59.190804000 -0300
+@@ -0,0 +1,41 @@
++# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
++
++def build(bld):
++    module = bld.create_ns3_module('auv', ['uan', 'mobility', 'energy'])
++    module.source = [
++                'model/typhoon-constraints.cc',
++                'model/remus-constraints.cc',
++                'model/remus-constraintsv2.cc',
++                'model/glider-constraints.cc',
++                'model/typhoon-energy-model.cc',
++                'model/remus-energy-model.cc',
++                'model/glider-energy-model.cc',
++                'model/auv-waypoint-mobility-model.cc',
++                'model/kinematic-constraints.cc',
++                'helper/auv-typhoon-helper.cc',
++                'helper/auv-remus-helper.cc',
++                'helper/auv-remus-helperv2.cc',
++                'helper/auv-glider-helper.cc',
++        ]
++    headers = bld(features='ns3header')
++    headers.module = 'auv'
++    headers.source = [
++                'model/typhoon-constraints.h',
++                'model/remus-constraints.h',
++                'model/remus-constraintsv2.h',
++                'model/glider-constraints.h',
++                'model/typhoon-energy-model.h',
++                'model/remus-energy-model.h',
++                'model/glider-energy-model.h',
++                'model/auv-waypoint-mobility-model.h',
++                'model/kinematic-constraints.h',
++                'helper/auv-typhoon-helper.h',
++                'helper/auv-remus-helper.h',
++                'helper/auv-remus-helperv2.h',
++                'helper/auv-glider-helper.h',
++        ]
++
++    if bld.env.ENABLE_EXAMPLES:
++        bld.recurse('examples')
++        
++        bld.ns3_python_bindings()
+diff -ruN ns-allinone-3.31/ns-3.31/src/mobility/model/waypoint-mobility-model.h ns-allinone-3.31_auv/ns-3.31/src/mobility/model/waypoint-mobility-model.h
+--- ns-allinone-3.31/ns-3.31/src/mobility/model/waypoint-mobility-model.h	2020-06-27 21:38:30.000000000 -0300
++++ ns-allinone-3.31_auv/ns-3.31/src/mobility/model/waypoint-mobility-model.h	2020-07-05 10:17:48.866296000 -0300
+@@ -132,10 +132,6 @@
+   friend class ::WaypointMobilityModelNotifyTest; // To allow Update() calls and access to m_current
+ 
+   /**
+-   * Update the underlying state corresponding to the stored waypoints
+-   */
+-  virtual void Update (void) const;
+-  /**
+    * \brief The dispose method.
+    * 
+    * Subclasses must override this method.
+@@ -159,6 +155,10 @@
+ 
+ protected:
+   /**
++   * Update the underlying state corresponding to the stored waypoints
++   */
++  virtual void Update (void) const;
++  /**
+    * \brief This variable is set to true if there are no waypoints in the std::deque
+    */
+   bool m_first;
