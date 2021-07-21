@@ -4,8 +4,8 @@
 
 ### Equipe
  - Idealizador/Orientador: Prof. Vicente Sousa (vicente.sousa@ufrn.edu.br)
- - Coordenador: MSc. Daniel Luna (danielro@ufrn.edu.br)  
- - Equipe técnica: Daniel Luna (danielro@ufrn.edu.br), Carlos Lima (carloslm@ufrn.edu.br) e Matheus Fagundes (matheusfagundes@ufrn.edu.br).
+ - Coordenador: MSc. Daniel Luna (daniel.luna.088@ufrn.edu.br)  
+ - Equipe técnica: Daniel Luna (daniel.luna.088@ufrn.edu.br), Carlos Lima (carlos.lima.106@ufrn.edu.br) e Matheus Fagundes (matheus.fagundes.067@ufrn.edu.br).
  
 ### Primeiros passos:
 
