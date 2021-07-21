@@ -1,6 +1,6 @@
 # UAN_ENCOM2021
 
-## GppCom's Repository about investigations of Underwater Sensor Networks (UAN) and Autonomous Underwater Vehicles (AUV) using ns-3
+## Repositório do GppCom sobre investigações de Rede de Sensores Subaquáticas (do inglês Underwater Sensor Networks - UAN) e Veículos autônomos subaquáticos (do inglês Autonomous Underwater Vehicles - AUV) utilizando o simulador ns-3.
 
 ### Equipe
  - Idealizador/Orientador: Prof. Vicente Sousa (vicente.sousa@ufrn.edu.br)
@@ -13,9 +13,9 @@ O simulador de eventos discretos utilizado é o ns-3. Para cada versão do ns-3 
 
 Downloads:
 
-- Versão [ns-3.29](https://www.nsnam.org/releases/ns-allinone-3.29.tar.bz2) e [patch](https://github.com/danielrluna/auv-ns3/blob/master/Patches/auv-ns3-29.patch); 
-- Versão [ns-3.30.1](https://www.nsnam.org/releases/ns-allinone-3.30.1.tar.bz2) e [patch](https://github.com/danielrluna/auv-ns3/blob/master/Patches/auv-ns3-30-1.patch);
-- Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/danielrluna/auv-ns3/blob/master/Patches/auv-ns3-31.patch);
+- Versão [ns-3.29](https://www.nsnam.org/releases/ns-allinone-3.29.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/auv-ns3-29.patch); 
+- Versão [ns-3.30.1](https://www.nsnam.org/releases/ns-allinone-3.30.1.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/auv-ns3-30-1.patch);
+- Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/auv-ns3-31.patch);
 
 Instruções:
 
@@ -39,29 +39,17 @@ O exemplo desenvolvido pelo GppCom tem como objetivo reproduzir o exemplo origin
 
 ## Caso de estudo do ENCOM 2021: Autonomous Underwater Vehicles 
 - Nesse caso de estudo foi necessário realizar alterações no módulo AUV, segue o patch abaixo com as alterações:
-- Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/master/Patches/auv-ns3-31-CE02.patch);
+- Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/encom_ns3-31.patch);
 
-### [Hands-on 1: comparação de AUVs](https://nbviewer.jupyter.org/github/vicentesousa/UAN_ENCON2021/blob/master/CE/HD01/ce_hd01.ipynb) - [link](https://github.com/vicentesousa/UAN_ENCON2021/blob/master/CE/HD01/ce_hd01.ipynb)
+### [Cenário 1:]
 **Objetivos**
- - Investigar o comportamento dos diferentes AUVs no cenário do exemplo base "uan-auv-ipv4.cc".
-
-**Instruções para o hands-on**
-
- - Protocolo MAC: aloha;
- - Concluir qual melhor AUV para o cenário e justificar o resultado de cada um;
- - Gerar um gráficos *Throughput* vs. Distância, *PLR* vs. Distância e *Energy Consumed* vs. Distância (modem e navegação).
+ - Investigar o comportamento dos diferentes AUVs no cenário do exemplo base: [Prototipando Veículos Autônomos Submarinos usando o ns-3](https://www.researchgate.net/publication/335777545_Prototipando_Veiculos_Autonomos_Submarinos_usando_o_ns-3).
+ - Resultados: https://github.com/vicentesousa/UAN_ENCON2021/tree/main/casos_de_estudo/cenario_01
  
-### [Hands-on 2: deslocamento dos AUVs](https://nbviewer.jupyter.org/github/vicentesousa/UAN_ENCON2021/blob/master/CE/HD02/ce_hd02.ipynb) - [link](https://github.com/vicentesousa/UAN_ENCON2021/blob/master/CE/HD02/ce_hd02.ipynb)
+### [Cenário]
 **Objetivos**
- - Investigar o aumento do consumo de energia provocado pelo aumento do deslocamento horizontal e vertical dos AUVs (com mobilidade).
-
-**Instruções para o hands-on**
-
- - Protocolo MAC: aloha;
- - Concluir qual melhor AUV para o cenário e justificar o resultado de cada um;
- - Gerar gráficos *Throughput* vs. Distância, *PLR* vs. Distância e *Energy Consumed* vs. Distância.
-
-
+ - Investigar o aumento do consumo de energia provocado pelo aumento deslocamento vertical.
+ - Resultados: https://github.com/vicentesousa/UAN_ENCON2021/tree/main/casos_de_estudo/cenario_02
 <!---
 comentário
 -->
