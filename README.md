@@ -11,9 +11,9 @@ O simulador de eventos discretos utilizado é o ns-3. Para cada versão do ns-3 
 
 Downloads:
 
-- Versão [ns-3.29](https://www.nsnam.org/releases/ns-allinone-3.29.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/auv-ns3-29.patch); 
-- Versão [ns-3.30.1](https://www.nsnam.org/releases/ns-allinone-3.30.1.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/auv-ns3-30-1.patch);
-- Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/auv-ns3-31.patch);
+- Versão [ns-3.29](https://www.nsnam.org/releases/ns-allinone-3.29.tar.bz2) e [patch](https://github.com/vicentesousa/UANENCOM2021/blob/main/patches/auv-ns3-29.patch); 
+- Versão [ns-3.30.1](https://www.nsnam.org/releases/ns-allinone-3.30.1.tar.bz2) e [patch](https://github.com/vicentesousa/UANENCOM2021/blob/main/patches/auv-ns3-30-1.patch);
+- Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/vicentesousa/UANENCOM2021/blob/main/patches/auv-ns3-31.patch);
 
 Instruções:
 
@@ -37,17 +37,17 @@ O exemplo desenvolvido pelo GppCom tem como objetivo reproduzir o exemplo origin
 
 ## Caso de estudo do ENCOM 2021: Autonomous Underwater Vehicles 
 - Nesse caso de estudo foi necessário realizar alterações no módulo AUV, segue o patch abaixo com as alterações:
-- Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/encom_ns3-31.patch);
+- Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/vicentesousa/UANENCOM2021/blob/main/patches/encom_ns3-31.patch);
 
 ### [Cenário 1]
 **Objetivos**
  - Investigar o comportamento dos diferentes AUVs no cenário do exemplo base: [Prototipando Veículos Autônomos Submarinos usando o ns-3](https://www.researchgate.net/publication/335777545_Prototipando_Veiculos_Autonomos_Submarinos_usando_o_ns-3).
- - Resultados: https://github.com/vicentesousa/UAN_ENCON2021/tree/main/casos_de_estudo/cenario_01
+ - Resultados: https://github.com/vicentesousa/UANENCOM2021/tree/main/casos_de_estudo/cenario_01
  
 ### [Cenário]
 **Objetivos**
  - Investigar o aumento do consumo de energia provocado pelo aumento deslocamento vertical.
- - Resultados: https://github.com/vicentesousa/UAN_ENCON2021/tree/main/casos_de_estudo/cenario_02
+ - Resultados: https://github.com/vicentesousa/UANENCOM2021/tree/main/casos_de_estudo/cenario_02
 <!---
 comentário
 -->
