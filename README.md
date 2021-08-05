@@ -39,7 +39,7 @@ O exemplo desenvolvido pelo GppCom tem como objetivo reproduzir o exemplo origin
 - Nesse caso de estudo foi necessário realizar alterações no módulo AUV, segue o patch abaixo com as alterações:
 - Versão [ns-3.31](https://www.nsnam.org/releases/ns-allinone-3.31.tar.bz2) e [patch](https://github.com/vicentesousa/UAN_ENCON2021/blob/main/patches/encom_ns3-31.patch);
 
-### [Cenário 1:]
+### [Cenário 1]
 **Objetivos**
  - Investigar o comportamento dos diferentes AUVs no cenário do exemplo base: [Prototipando Veículos Autônomos Submarinos usando o ns-3](https://www.researchgate.net/publication/335777545_Prototipando_Veiculos_Autonomos_Submarinos_usando_o_ns-3).
  - Resultados: https://github.com/vicentesousa/UAN_ENCON2021/tree/main/casos_de_estudo/cenario_01
