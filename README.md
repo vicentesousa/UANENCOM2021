@@ -1,6 +1,4 @@
-# UAN_ENCOM2021
-
-## Repositório do GppCom sobre investigações de Rede de Sensores Subaquáticas (do inglês Underwater Sensor Networks - UAN) e Veículos autônomos subaquáticos (do inglês Autonomous Underwater Vehicles - AUV) utilizando o simulador ns-3.
+# Repositório do GppCom sobre investigações de Rede de Sensores Subaquáticas (do inglês Underwater Sensor Networks - UAN) e Veículos autônomos subaquáticos (do inglês Autonomous Underwater Vehicles - AUV) utilizando o simulador ns-3.
 
 ### Equipe
  - Idealizador/Orientador: Prof. Vicente Sousa (vicente.sousa@ufrn.edu.br)
