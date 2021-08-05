@@ -44,7 +44,7 @@ O exemplo desenvolvido pelo GppCom tem como objetivo reproduzir o exemplo origin
  - Investigar o comportamento dos diferentes AUVs no cenário do exemplo base: [Prototipando Veículos Autônomos Submarinos usando o ns-3](https://www.researchgate.net/publication/335777545_Prototipando_Veiculos_Autonomos_Submarinos_usando_o_ns-3).
  - Resultados: https://github.com/vicentesousa/UANENCOM2021/tree/main/casos_de_estudo/cenario_01
  
-### [Cenário]
+### [Cenário 2]
 **Objetivos**
  - Investigar o aumento do consumo de energia provocado pelo aumento deslocamento vertical.
  - Resultados: https://github.com/vicentesousa/UANENCOM2021/tree/main/casos_de_estudo/cenario_02
